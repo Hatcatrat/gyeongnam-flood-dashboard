@@ -12,12 +12,12 @@
         <div class="title-block">
           <p class="eyebrow">Gyeongnam Flood Exposure</p>
           <h1>홍수 범람 위험 지역 대시보드</h1>
-          <p class="subtitle">위험 점수가 높은 행정동은 더 큰 빨간 타일로, 낮은 지역은 작은 녹색 타일로 표시합니다.</p>
+          <p class="subtitle" id="sourceSummary">CSV 데이터를 불러오는 중입니다.</p>
         </div>
 
-        <div class="controls" aria-label="필터">
+        <div class="controls">
           <label class="control">
-            <span>지역</span>
+            <span>지역 선택</span>
             <select id="regionSelect"></select>
           </label>
 
@@ -28,55 +28,80 @@
         </div>
       </section>
 
+      <section class="summary-grid" aria-label="위험 점수 요약">
+        <article class="metric-card dominant">
+          <span class="metric-label" id="primaryLabel">최고 위험 지역</span>
+          <strong id="primaryRegion">-</strong>
+          <p id="primaryCode">-</p>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">종합 위험점수</span>
+          <strong id="riskScore">-</strong>
+          <p id="riskGrade">-</p>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">강수 위험점수</span>
+          <strong id="rainScore">-</strong>
+          <p id="rainMetric">-</p>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">범람노출 추정점수</span>
+          <strong id="floodScore">-</strong>
+          <p id="floodMetric">-</p>
+        </article>
+      </section>
+
       <section class="dashboard-grid">
-        <article class="tile-panel" aria-label="위험 지역 타일맵">
+        <article class="panel rank-panel">
           <div class="panel-head">
             <div>
-              <h2>위험 지역 타일맵</h2>
-              <p id="tileCaption">-</p>
+              <h2>지역별 위험 순위</h2>
+              <p id="rankCaption">강수량과 범람노출 추정치를 종합한 순위</p>
             </div>
-            <div class="legend" aria-label="위험도 범례">
-              <span><i class="legend-red"></i>매우 높음</span>
-              <span><i class="legend-amber"></i>주의</span>
-              <span><i class="legend-green"></i>낮음</span>
-            </div>
+            <span class="badge">Top 10</span>
           </div>
           <div id="riskTiles" class="risk-tiles"></div>
         </article>
 
-        <aside class="insight-panel" aria-label="최고 위험 지역 요약">
-          <article class="top-risk-card">
-            <span class="metric-label">최고 위험 행정동코드</span>
-            <strong id="topAdminCode">-</strong>
-            <p id="topAdminName">-</p>
-          </article>
-
-          <article class="panel compact-panel">
-            <h2>현재 최고 위험도</h2>
-            <div class="score-row">
-              <strong id="topScore">-</strong>
-              <span id="riskGrade">-</span>
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>월별 강수량</h2>
+              <p id="monthlyCaption">선택 지역 기준 월별 합계</p>
             </div>
-            <div class="split-bars">
-              <div>
-                <span>강수 위험</span>
-                <b id="rainScore">-</b>
-                <div class="bar-track"><i id="rainBar"></i></div>
-              </div>
-              <div>
-                <span>범람 취약</span>
-                <b id="floodScore">-</b>
-                <div class="bar-track"><i id="floodBar"></i></div>
-              </div>
-            </div>
-            <p id="riskSignal" class="note">-</p>
-          </article>
+          </div>
+          <canvas id="monthlyChart" height="280" aria-label="월별 강수량 막대 그래프"></canvas>
+        </article>
 
-          <article class="panel compact-panel">
-            <h2>상위 지역 집중 현황</h2>
-            <div id="rankBars" class="rank-bars"></div>
-          </article>
-        </aside>
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>날짜별 강수량</h2>
+              <p id="dailyCaption">강수량이 높았던 날짜 상위 20개</p>
+            </div>
+          </div>
+          <canvas id="dailyChart" height="360" aria-label="날짜별 강수량 막대 그래프"></canvas>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>홍수범람 빈도 분포</h2>
+              <p id="frequencyCaption">홍수범람구역 CSV 기준</p>
+            </div>
+          </div>
+          <canvas id="frequencyChart" height="280" aria-label="홍수범람 빈도별 구역 수"></canvas>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>하천관리코드 취약도</h2>
+              <p>빈도 가중치로 산출한 상위 하천관리코드</p>
+            </div>
+          </div>
+          <canvas id="riverChart" height="360" aria-label="하천관리코드 취약도 그래프"></canvas>
+        </article>
       </section>
 
       <section class="detail-grid">
@@ -84,19 +109,23 @@
           <h2>산출 기준</h2>
           <div class="formula-block">
             <span>강수위험점수</span>
-            <code>0.35R + 0.30H + 0.25C30 + 0.10Y</code>
+            <code>0.35×누적강수량 + 0.30×최대시간강수량 + 0.25×30mm 이상 횟수 + 0.10×2024년 강수량</code>
           </div>
           <div class="formula-block">
-            <span>범람 취약점수</span>
-            <code>10년x5.0 + 20년x4.5 + 30년x4.0 + 50년x3.0</code>
+            <span>범람노출 추정점수</span>
+            <code>0.35×최대일강수량 + 0.30×50mm 이상 횟수 + 0.20×30mm 이상 횟수 + 0.15×최대시간강수량</code>
           </div>
-          <p class="note">PDF 발표 자료의 정규화 가중합 방식을 유지하고, 타일 면적은 최종 점수 순위와 크기에 맞춰 배치했습니다.</p>
+          <div class="formula-block">
+            <span>홍수범람구역 가중치</span>
+            <code>10년=5.0, 20년=4.5, 30년=4.0, 50년=3.0, 80년 이상은 낮은 가중치</code>
+          </div>
+          <p class="note">홍수범람구역 CSV에는 행정동코드가 없어 지역별 직접 공간 결합은 하지 않았습니다. 대신 범람구역 빈도와 하천관리코드 취약도는 별도 지표로 반영하고, 지역별 범람노출은 강수 강도 기반 추정치로 계산했습니다.</p>
         </article>
 
         <article class="panel table-panel">
           <div class="panel-head">
             <div>
-              <h2>행정동별 위험 순위</h2>
+              <h2>지역별 산출 결과</h2>
               <p id="tableCaption">-</p>
             </div>
           </div>
@@ -106,12 +135,15 @@
                 <tr>
                   <th>순위</th>
                   <th>지역</th>
-                  <th>행정동</th>
                   <th>행정동코드</th>
-                  <th>종합점수</th>
+                  <th>종합</th>
                   <th>강수</th>
-                  <th>범람</th>
-                  <th>주요 하천관리코드</th>
+                  <th>범람추정</th>
+                  <th>누적강수량</th>
+                  <th>최대일강수량</th>
+                  <th>최대시간</th>
+                  <th>30mm+</th>
+                  <th>50mm+</th>
                 </tr>
               </thead>
               <tbody id="resultRows"></tbody>
@@ -121,6 +153,7 @@
       </section>
     </main>
 
+    <script src="data.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

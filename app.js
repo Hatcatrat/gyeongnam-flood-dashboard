@@ -1,215 +1,36 @@
-const SAMPLE_ROWS = [
-  {
-    region: "거제시",
-    adminName: "장목면",
-    adminCode: "4831039000",
-    totalRain: 5612.4,
-    maxHourly: 74.2,
-    heavy30: 27,
-    heavy50: 5,
-    recentRain: 1542.8,
-    flood10: 84,
-    flood20: 56,
-    flood30: 38,
-    flood50: 24,
-    riverCode: "20244802013F01Q0101",
-  },
-  {
-    region: "거제시",
-    adminName: "일운면",
-    adminCode: "4831031000",
-    totalRain: 5318.9,
-    maxHourly: 69.4,
-    heavy30: 25,
-    heavy50: 4,
-    recentRain: 1498.5,
-    flood10: 52,
-    flood20: 44,
-    flood30: 31,
-    flood50: 18,
-    riverCode: "20244802013F01Q0101",
-  },
-  {
-    region: "남해군",
-    adminName: "남해읍",
-    adminCode: "4884025000",
-    totalRain: 5486.2,
-    maxHourly: 70.1,
-    heavy30: 26,
-    heavy50: 5,
-    recentRain: 1516.7,
-    flood10: 61,
-    flood20: 47,
-    flood30: 29,
-    flood50: 22,
-    riverCode: "20235102019F02Q0101",
-  },
-  {
-    region: "남해군",
-    adminName: "창선면",
-    adminCode: "4884038000",
-    totalRain: 5202.8,
-    maxHourly: 65.3,
-    heavy30: 22,
-    heavy50: 4,
-    recentRain: 1444.3,
-    flood10: 48,
-    flood20: 35,
-    flood30: 28,
-    flood50: 19,
-    riverCode: "20235102019F02Q0101",
-  },
-  {
-    region: "산청군",
-    adminName: "산청읍",
-    adminCode: "4886025000",
-    totalRain: 4978.4,
-    maxHourly: 76.5,
-    heavy30: 21,
-    heavy50: 4,
-    recentRain: 1385.2,
-    flood10: 42,
-    flood20: 38,
-    flood30: 27,
-    flood50: 20,
-    riverCode: "20234202019F01Q0101",
-  },
-  {
-    region: "의령군",
-    adminName: "의령읍",
-    adminCode: "4872025000",
-    totalRain: 4516.6,
-    maxHourly: 79.0,
-    heavy30: 18,
-    heavy50: 4,
-    recentRain: 1264.8,
-    flood10: 39,
-    flood20: 31,
-    flood30: 25,
-    flood50: 18,
-    riverCode: "20234202019F01Q0101",
-  },
-  {
-    region: "하동군",
-    adminName: "하동읍",
-    adminCode: "4885025000",
-    totalRain: 4824.1,
-    maxHourly: 66.8,
-    heavy30: 20,
-    heavy50: 3,
-    recentRain: 1312.5,
-    flood10: 57,
-    flood20: 41,
-    flood30: 32,
-    flood50: 21,
-    riverCode: "20249402013F01Q0101",
-  },
-  {
-    region: "김해시",
-    adminName: "진영읍",
-    adminCode: "4825025000",
-    totalRain: 4242.9,
-    maxHourly: 61.2,
-    heavy30: 17,
-    heavy50: 3,
-    recentRain: 1198.2,
-    flood10: 68,
-    flood20: 52,
-    flood30: 37,
-    flood50: 26,
-    riverCode: "20246402010F01Q0101",
-  },
-  {
-    region: "밀양시",
-    adminName: "삼랑진읍",
-    adminCode: "4827025000",
-    totalRain: 3988.2,
-    maxHourly: 62.7,
-    heavy30: 15,
-    heavy50: 3,
-    recentRain: 1124.3,
-    flood10: 43,
-    flood20: 33,
-    flood30: 29,
-    flood50: 18,
-    riverCode: "20246402010F01Q0101",
-  },
-  {
-    region: "창원시",
-    adminName: "북면",
-    adminCode: "4812131000",
-    totalRain: 3875.6,
-    maxHourly: 59.4,
-    heavy30: 14,
-    heavy50: 2,
-    recentRain: 1076.9,
-    flood10: 36,
-    flood20: 28,
-    flood30: 22,
-    flood50: 17,
-    riverCode: "20244802013F01Q0101",
-  },
-  {
-    region: "함안군",
-    adminName: "칠원읍",
-    adminCode: "4873025300",
-    totalRain: 3662.1,
-    maxHourly: 57.9,
-    heavy30: 13,
-    heavy50: 2,
-    recentRain: 1022.4,
-    flood10: 45,
-    flood20: 36,
-    flood30: 26,
-    flood50: 20,
-    riverCode: "20235102019F02Q0101",
-  },
-  {
-    region: "합천군",
-    adminName: "합천읍",
-    adminCode: "4889025000",
-    totalRain: 3424.7,
-    maxHourly: 55.8,
-    heavy30: 12,
-    heavy50: 2,
-    recentRain: 984.6,
-    flood10: 34,
-    flood20: 27,
-    flood30: 20,
-    flood50: 15,
-    riverCode: "20249402013F01Q0101",
-  },
-];
+const DATA = window.FLOOD_DASHBOARD_DATA;
 
 const state = {
-  selectedRegion: "전체 경남",
+  selectedCode: "ALL",
   rainWeight: 55,
 };
 
 const el = {
+  sourceSummary: document.querySelector("#sourceSummary"),
   regionSelect: document.querySelector("#regionSelect"),
   rainWeight: document.querySelector("#rainWeight"),
   rainWeightLabel: document.querySelector("#rainWeightLabel"),
-  riskTiles: document.querySelector("#riskTiles"),
-  tileCaption: document.querySelector("#tileCaption"),
-  topAdminCode: document.querySelector("#topAdminCode"),
-  topAdminName: document.querySelector("#topAdminName"),
-  topScore: document.querySelector("#topScore"),
+  primaryLabel: document.querySelector("#primaryLabel"),
+  primaryRegion: document.querySelector("#primaryRegion"),
+  primaryCode: document.querySelector("#primaryCode"),
+  riskScore: document.querySelector("#riskScore"),
   riskGrade: document.querySelector("#riskGrade"),
   rainScore: document.querySelector("#rainScore"),
+  rainMetric: document.querySelector("#rainMetric"),
   floodScore: document.querySelector("#floodScore"),
-  rainBar: document.querySelector("#rainBar"),
-  floodBar: document.querySelector("#floodBar"),
-  riskSignal: document.querySelector("#riskSignal"),
-  rankBars: document.querySelector("#rankBars"),
+  floodMetric: document.querySelector("#floodMetric"),
+  rankCaption: document.querySelector("#rankCaption"),
+  monthlyCaption: document.querySelector("#monthlyCaption"),
+  dailyCaption: document.querySelector("#dailyCaption"),
+  frequencyCaption: document.querySelector("#frequencyCaption"),
+  riskTiles: document.querySelector("#riskTiles"),
+  monthlyChart: document.querySelector("#monthlyChart"),
+  dailyChart: document.querySelector("#dailyChart"),
+  frequencyChart: document.querySelector("#frequencyChart"),
+  riverChart: document.querySelector("#riverChart"),
   tableCaption: document.querySelector("#tableCaption"),
   resultRows: document.querySelector("#resultRows"),
 };
-
-function numberValue(value) {
-  const next = Number(value);
-  return Number.isFinite(next) ? next : 0;
-}
 
 function escapeHtml(value) {
   return String(value)
@@ -220,61 +41,15 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function maxOf(rows, key) {
-  const value = Math.max(...rows.map((row) => numberValue(row[key])), 0);
-  return value > 0 ? value : 1;
-}
-
-function normalize(value, max) {
-  return Math.min(numberValue(value) / max, 1);
-}
-
-function scoreRows(rows) {
-  const max = {
-    totalRain: maxOf(rows, "totalRain"),
-    maxHourly: maxOf(rows, "maxHourly"),
-    heavy30: maxOf(rows, "heavy30"),
-    recentRain: maxOf(rows, "recentRain"),
-  };
-
-  const floodRows = rows.map((row) => ({
-    ...row,
-    floodRaw:
-      numberValue(row.flood10) * 5 +
-      numberValue(row.flood20) * 4.5 +
-      numberValue(row.flood30) * 4 +
-      numberValue(row.flood50) * 3,
-  }));
-  const maxFloodRaw = Math.max(...floodRows.map((row) => row.floodRaw), 0) || 1;
-  const rainWeight = state.rainWeight / 100;
-  const floodWeight = 1 - rainWeight;
-
-  return floodRows
-    .map((row) => {
-      const rainScore =
-        normalize(row.totalRain, max.totalRain) * 0.35 +
-        normalize(row.maxHourly, max.maxHourly) * 0.3 +
-        normalize(row.heavy30, max.heavy30) * 0.25 +
-        normalize(row.recentRain, max.recentRain) * 0.1;
-      const floodScore = normalize(row.floodRaw, maxFloodRaw);
-
-      return {
-        ...row,
-        rainScore,
-        floodScore,
-        finalScore: rainScore * rainWeight + floodScore * floodWeight,
-      };
-    })
-    .sort((a, b) => b.finalScore - a.finalScore);
-}
-
-function filteredRows(rows) {
-  if (state.selectedRegion === "전체 경남") return rows;
-  return rows.filter((row) => row.region === state.selectedRegion);
-}
-
 function formatScore(value) {
   return (value * 100).toFixed(1);
+}
+
+function formatNumber(value, digits = 0) {
+  return Number(value || 0).toLocaleString("ko-KR", {
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits,
+  });
 }
 
 function riskLabel(score) {
@@ -285,53 +60,97 @@ function riskLabel(score) {
 }
 
 function tileColor(score, rank) {
-  if (rank === 1 || score >= 0.9) {
-    return ["#d84c3f", "#ffffff", "rgba(255,255,255,0.78)"];
-  }
-  if (score >= 0.76) {
-    return ["#d9961c", "#1e2420", "rgba(30,36,32,0.68)"];
-  }
-  if (score >= 0.62) {
-    return ["#5d9f78", "#ffffff", "rgba(255,255,255,0.76)"];
-  }
-  return ["#14815f", "#ffffff", "rgba(255,255,255,0.74)"];
+  if (rank === 1 || score >= 0.86) return ["#d84c3f", "#ffffff", "rgba(255,255,255,0.78)"];
+  if (score >= 0.72) return ["#d9961c", "#1e2420", "rgba(30,36,32,0.68)"];
+  if (score >= 0.58) return ["#5d9f78", "#ffffff", "rgba(255,255,255,0.76)"];
+  return ["#12805d", "#ffffff", "rgba(255,255,255,0.74)"];
 }
 
 function tileClass(index) {
   if (index === 0) return "rank-1";
   if (index === 1) return "rank-2";
   if (index === 2) return "rank-3";
-  if (index === 3) return "rank-4";
   return "";
 }
 
-function renderRegionOptions() {
-  const regions = ["전체 경남", ...new Set(SAMPLE_ROWS.map((row) => row.region).sort())];
-  el.regionSelect.innerHTML = regions
-    .map((region) => `<option value="${escapeHtml(region)}">${escapeHtml(region)}</option>`)
-    .join("");
-  el.regionSelect.value = state.selectedRegion;
+function scoredRegions() {
+  const rainWeight = state.rainWeight / 100;
+  const floodWeight = 1 - rainWeight;
+  return DATA.regions
+    .map((region) => ({
+      ...region,
+      riskScore: region.rainScore * rainWeight + region.floodProxyScore * floodWeight,
+    }))
+    .sort((a, b) => b.riskScore - a.riskScore);
 }
 
-function renderTiles(rows) {
+function selectedRegion(scored) {
+  if (state.selectedCode === "ALL") return scored[0];
+  return scored.find((region) => region.code === state.selectedCode) || scored[0];
+}
+
+function selectedSeries(region) {
+  if (state.selectedCode === "ALL") {
+    return {
+      monthly: DATA.overall.monthly,
+      dailyTop: DATA.overall.dailyTop,
+      label: "전체 경남",
+    };
+  }
+  return {
+    monthly: region.monthly,
+    dailyTop: region.dailyTop,
+    label: region.name,
+  };
+}
+
+function renderRegionOptions() {
+  el.regionSelect.innerHTML = [
+    `<option value="ALL">전체 경남</option>`,
+    ...DATA.regions
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name, "ko"))
+      .map((region) => `<option value="${region.code}">${escapeHtml(region.name)} (${region.code})</option>`),
+  ].join("");
+  el.regionSelect.value = state.selectedCode;
+}
+
+function renderSummary(scored, region) {
+  const label = state.selectedCode === "ALL" ? "최고 위험 지역" : "선택 지역";
+  el.primaryLabel.textContent = label;
+  el.primaryRegion.textContent = region.name;
+  el.primaryCode.textContent = `${region.code} · ${region.sigungu}`;
+  el.riskScore.textContent = formatScore(region.riskScore);
+  el.riskGrade.textContent = riskLabel(region.riskScore);
+  el.rainScore.textContent = formatScore(region.rainScore);
+  el.rainMetric.textContent = `누적 ${formatNumber(region.totalRain, 1)}mm · 최대시간 ${formatNumber(region.maxHourly, 1)}mm`;
+  el.floodScore.textContent = formatScore(region.floodProxyScore);
+  el.floodMetric.textContent = `최대일 ${formatNumber(region.maxDaily, 1)}mm · 50mm+ ${region.heavy50}회`;
+
+  el.sourceSummary.textContent =
+    `${DATA.dateRange.start}~${DATA.dateRange.end} 강수 ${formatNumber(DATA.recordCounts.rain)}건, ` +
+    `지역 ${DATA.recordCounts.regions}개, 홍수범람구역 ${formatNumber(DATA.recordCounts.floodZones)}개를 반영했습니다.`;
+  el.rainWeightLabel.textContent = `${state.rainWeight}%`;
+  el.rankCaption.textContent = `${state.selectedCode === "ALL" ? "전체 경남" : region.name} 기준 · 강수 ${state.rainWeight}% / 범람노출 ${100 - state.rainWeight}%`;
+  el.tableCaption.textContent = `전체 ${scored.length}개 지역 위험 점수 내림차순`;
+}
+
+function renderTiles(scored) {
+  const rows = state.selectedCode === "ALL" ? scored.slice(0, 10) : scored.filter((row) => row.code === state.selectedCode);
   el.riskTiles.innerHTML = rows
-    .map((row, index) => {
-      const rank = index + 1;
-      const [bg, fg, muted] = tileColor(row.finalScore, rank);
+    .map((region, index) => {
+      const rank = scored.findIndex((item) => item.code === region.code) + 1;
+      const [bg, fg, muted] = tileColor(region.riskScore, rank);
       return `
-        <article
-          class="risk-tile ${tileClass(index)}"
-          style="--tile-bg:${bg};--tile-fg:${fg};--tile-muted:${muted};"
-          aria-label="${escapeHtml(`${rank}위 ${row.region} ${row.adminName} 위험점수 ${formatScore(row.finalScore)}`)}"
-        >
+        <article class="risk-tile ${tileClass(index)}" style="--tile-bg:${bg};--tile-fg:${fg};--tile-muted:${muted};">
           <div class="tile-name">
             <span class="tile-rank">${rank}</span>
-            <strong>${escapeHtml(row.adminName)}</strong>
-            <span>${escapeHtml(row.region)} · ${escapeHtml(row.adminCode)}</span>
+            <strong>${escapeHtml(region.name)}</strong>
+            <span>${region.code}</span>
           </div>
           <div class="tile-score">
-            <span class="tile-meta">10년 빈도 ${row.flood10}개</span>
-            <strong>${formatScore(row.finalScore)}</strong>
+            <span class="tile-meta">최대일 ${formatNumber(region.maxDaily, 1)}mm</span>
+            <strong>${formatScore(region.riskScore)}</strong>
           </div>
         </article>
       `;
@@ -339,76 +158,184 @@ function renderTiles(rows) {
     .join("");
 }
 
-function renderSummary(rows) {
-  const top = rows[0];
-  if (!top) return;
-
-  el.topAdminCode.textContent = top.adminCode;
-  el.topAdminName.textContent = `${top.region} ${top.adminName}`;
-  el.topScore.textContent = formatScore(top.finalScore);
-  el.riskGrade.textContent = riskLabel(top.finalScore);
-  el.rainScore.textContent = formatScore(top.rainScore);
-  el.floodScore.textContent = formatScore(top.floodScore);
-  el.rainBar.style.width = `${Math.round(top.rainScore * 100)}%`;
-  el.floodBar.style.width = `${Math.round(top.floodScore * 100)}%`;
-  el.riskSignal.textContent = `${top.heavy30}회 집중호우, 하천관리코드 ${top.riverCode}가 함께 관측된 우선 점검 후보입니다.`;
-}
-
-function renderRankBars(rows) {
-  const maxScore = rows[0]?.finalScore || 1;
-  el.rankBars.innerHTML = rows
-    .slice(0, 5)
-    .map((row, index) => {
-      const [color] = tileColor(row.finalScore, index + 1);
-      const width = Math.max(8, Math.round((row.finalScore / maxScore) * 100));
-      return `
-        <div class="rank-bar">
-          <span class="bar-label">${escapeHtml(row.adminName)}</span>
-          <span class="rank-track"><i style="width:${width}%;--bar-color:${color};"></i></span>
-          <span class="bar-score">${formatScore(row.finalScore)}</span>
-        </div>
-      `;
-    })
-    .join("");
-}
-
-function renderTable(rows) {
-  el.resultRows.innerHTML = rows
+function renderTable(scored) {
+  el.resultRows.innerHTML = scored
     .map(
-      (row, index) => `
+      (region, index) => `
         <tr>
           <td><span class="rank-pill">${index + 1}</span></td>
-          <td>${escapeHtml(row.region)}</td>
-          <td>${escapeHtml(row.adminName)}</td>
-          <td>${escapeHtml(row.adminCode)}</td>
-          <td class="score-cell">${formatScore(row.finalScore)}</td>
-          <td>${formatScore(row.rainScore)}</td>
-          <td>${formatScore(row.floodScore)}</td>
-          <td>${escapeHtml(row.riverCode)}</td>
+          <td>${escapeHtml(region.name)}</td>
+          <td>${region.code}</td>
+          <td class="score-cell">${formatScore(region.riskScore)}</td>
+          <td>${formatScore(region.rainScore)}</td>
+          <td>${formatScore(region.floodProxyScore)}</td>
+          <td>${formatNumber(region.totalRain, 1)}mm</td>
+          <td>${formatNumber(region.maxDaily, 1)}mm</td>
+          <td>${formatNumber(region.maxHourly, 1)}mm</td>
+          <td>${region.heavy30}</td>
+          <td>${region.heavy50}</td>
         </tr>
       `,
     )
     .join("");
 }
 
-function render() {
-  renderRegionOptions();
-  el.rainWeightLabel.textContent = `${state.rainWeight}%`;
-
-  const scored = scoreRows(SAMPLE_ROWS);
-  const rows = filteredRows(scored);
-
-  el.tileCaption.textContent = `${state.selectedRegion} 기준 · ${rows.length}개 행정동 위험 점수 비교`;
-  el.tableCaption.textContent = `${state.selectedRegion} 기준 위험 점수 내림차순`;
-
-  renderTiles(rows);
-  renderSummary(rows);
-  renderRankBars(rows);
-  renderTable(rows);
+function setupCanvas(canvas) {
+  const ratio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const height = Number(canvas.getAttribute("height"));
+  canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+  canvas.height = Math.max(1, Math.floor(height * ratio));
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  return { ctx, width: rect.width, height };
 }
 
+function fitText(ctx, text, maxWidth) {
+  const value = String(text);
+  if (ctx.measureText(value).width <= maxWidth) return value;
+  let clipped = value;
+  while (clipped.length > 2 && ctx.measureText(`${clipped}...`).width > maxWidth) {
+    clipped = clipped.slice(0, -1);
+  }
+  return `${clipped}...`;
+}
+
+function drawGrid(ctx, width, top, plotHeight, left) {
+  ctx.strokeStyle = "#e7ecee";
+  ctx.lineWidth = 1;
+  for (let step = 0; step <= 4; step += 1) {
+    const y = top + plotHeight - (plotHeight * step) / 4;
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(width - 10, y);
+    ctx.stroke();
+  }
+}
+
+function drawVerticalBars(canvas, items, options = {}) {
+  const { ctx, width, height } = setupCanvas(canvas);
+  const left = options.left || 46;
+  const top = 18;
+  const bottom = options.bottom || 58;
+  const plotWidth = width - left - 12;
+  const plotHeight = height - top - bottom;
+  const maxValue = Math.max(...items.map((item) => item.value), 1);
+  const gap = options.gap || 10;
+  const barWidth = Math.max(10, (plotWidth - gap * (items.length - 1)) / Math.max(items.length, 1));
+
+  ctx.clearRect(0, 0, width, height);
+  drawGrid(ctx, width, top, plotHeight, left);
+  ctx.font = "12px Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+
+  items.forEach((item, index) => {
+    const x = left + index * (barWidth + gap);
+    const barHeight = (item.value / maxValue) * plotHeight;
+    const y = top + plotHeight - barHeight;
+    const gradient = ctx.createLinearGradient(0, y, 0, top + plotHeight);
+    gradient.addColorStop(0, item.color || "#12805d");
+    gradient.addColorStop(1, item.fade || "#dcefe9");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, barWidth, barHeight);
+
+    ctx.fillStyle = "#172022";
+    ctx.font = "700 12px Segoe UI, sans-serif";
+    if (barWidth > 24) ctx.fillText(formatNumber(item.value, options.digits || 0), x + barWidth / 2, y - 7);
+    ctx.fillStyle = "#627174";
+    ctx.font = "12px Segoe UI, sans-serif";
+    ctx.fillText(fitText(ctx, item.label, barWidth + 10), x + barWidth / 2, top + plotHeight + 22);
+  });
+}
+
+function drawHorizontalBars(canvas, items, options = {}) {
+  const { ctx, width, height } = setupCanvas(canvas);
+  const left = options.left || 128;
+  const right = options.right || 64;
+  const top = 8;
+  const rowHeight = Math.max(24, (height - 18) / Math.max(items.length, 1));
+  const plotWidth = width - left - right;
+  const maxValue = Math.max(...items.map((item) => item.value), 1);
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.font = "12px Segoe UI, sans-serif";
+
+  items.forEach((item, index) => {
+    const y = top + index * rowHeight;
+    const barWidth = (plotWidth * item.value) / maxValue;
+    ctx.fillStyle = "#627174";
+    ctx.textAlign = "right";
+    ctx.fillText(fitText(ctx, item.label, left - 18), left - 12, y + rowHeight * 0.58);
+    ctx.fillStyle = item.color || "#12805d";
+    ctx.fillRect(left, y + 5, barWidth, Math.max(10, rowHeight - 13));
+    ctx.fillStyle = "#172022";
+    ctx.textAlign = "left";
+    ctx.font = "700 12px Segoe UI, sans-serif";
+    ctx.fillText(formatNumber(item.value, options.digits || 0), left + barWidth + 8, y + rowHeight * 0.58);
+    ctx.font = "12px Segoe UI, sans-serif";
+  });
+}
+
+function renderCharts(region) {
+  const series = selectedSeries(region);
+  el.monthlyCaption.textContent = `${series.label} 기준 월별 강수량 합계`;
+  el.dailyCaption.textContent = `${series.label} 기준 강수량 상위 날짜`;
+  el.frequencyCaption.textContent =
+    `전체 ${formatNumber(DATA.flood.totalZones)}개 구역 중 50년 빈도 이하 ${formatNumber(DATA.flood.lowFrequencyZones)}개`;
+
+  drawVerticalBars(
+    el.monthlyChart,
+    series.monthly.map((item) => ({
+      label: item.month,
+      value: item.rain,
+      color: item.month === "7월" || item.month === "8월" ? "#d84c3f" : "#12805d",
+      fade: item.month === "7월" || item.month === "8월" ? "#f6d7d2" : "#dcefe9",
+    })),
+    { digits: 0 },
+  );
+
+  drawHorizontalBars(
+    el.dailyChart,
+    series.dailyTop.map((item) => ({ label: item.date.slice(5), value: item.rain, color: "#315f72" })),
+    { left: 68, digits: 1 },
+  );
+
+  drawVerticalBars(
+    el.frequencyChart,
+    DATA.flood.frequencyCounts.map((item) => ({
+      label: `${item.frequency}년`,
+      value: item.count,
+      color: item.frequency <= 50 ? "#d84c3f" : "#12805d",
+      fade: item.frequency <= 50 ? "#f6d7d2" : "#dcefe9",
+    })),
+    { digits: 0 },
+  );
+
+  drawHorizontalBars(
+    el.riverChart,
+    DATA.flood.riverRiskTop.slice(0, 10).map((item) => ({
+      label: item.riverCode.slice(0, 12),
+      value: item.weightedScore,
+      color: item.minFrequency <= 50 ? "#d84c3f" : "#d9961c",
+    })),
+    { left: 112, digits: 0 },
+  );
+}
+
+function render() {
+  const scored = scoredRegions();
+  const region = selectedRegion(scored);
+  renderSummary(scored, region);
+  renderTiles(scored);
+  renderCharts(region);
+  renderTable(scored);
+}
+
+renderRegionOptions();
+render();
+
 el.regionSelect.addEventListener("change", (event) => {
-  state.selectedRegion = event.target.value;
+  state.selectedCode = event.target.value;
   render();
 });
 
@@ -417,4 +344,6 @@ el.rainWeight.addEventListener("input", (event) => {
   render();
 });
 
-render();
+window.addEventListener("resize", () => {
+  window.requestAnimationFrame(render);
+});

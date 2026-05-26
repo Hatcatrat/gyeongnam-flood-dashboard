@@ -1,0 +1,7 @@
+{
+  "name": "gyeongnam-flood-dashboard",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  }
+}

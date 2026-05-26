@@ -14,8 +14,6 @@ npm start
 
 이 프로젝트는 빌드 과정이 없는 정적 사이트입니다. GitHub 저장소에 push한 뒤, 저장소의 `Settings > Pages`에서 다음처럼 설정하면 됩니다.
 
-- Source: `Deploy from a branch`
-- Branch: `main`
-- Folder: `/ (root)`
+- Source: `GitHub Actions`
 
 배포 주소는 보통 `https://사용자명.github.io/저장소명/` 형태입니다.

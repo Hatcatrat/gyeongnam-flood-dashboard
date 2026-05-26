@@ -12,8 +12,10 @@ npm start
 
 ## GitHub Pages 배포
 
-이 프로젝트는 빌드 과정이 없는 정적 사이트입니다. GitHub 저장소에 push한 뒤, 저장소의 `Settings > Pages`에서 다음처럼 설정하면 됩니다.
+이 프로젝트는 빌드 과정이 없는 정적 사이트입니다. GitHub Pages는 `gh-pages` 브랜치의 루트 경로를 통해 배포합니다.
 
-- Source: `GitHub Actions`
+- Source: `Deploy from a branch`
+- Branch: `gh-pages`
+- Folder: `/ (root)`
 
 배포 주소는 보통 `https://사용자명.github.io/저장소명/` 형태입니다.

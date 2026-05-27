@@ -1,0 +1,1 @@
+globalThis.SPARK_EVIDENCE = {"status":"pending","engine":"Apache Spark / PySpark RDD","generatedAt":null,"message":"pyspark 패키지가 없어 로컬 RDD 실행은 대기 중입니다.","rddOperations":["binaryFiles","flatMap","map","filter","reduceByKey","takeOrdered"]};

@@ -10,10 +10,10 @@
     <main class="app-shell">
       <section class="topbar" aria-label="대시보드 조건">
         <div class="title-block">
-          <p class="eyebrow">CSV Integrated Flood Dashboard</p>
+          <p class="eyebrow">KMA Live Flood Risk Dashboard</p>
           <h1>경남 홍수 범람 위험 지역 대시보드</h1>
           <p class="subtitle">
-            강수량, 2024년 강수량, 행정동코드, 홍수범람구역 CSV를 집계해 지역별 위험점수와 월별·날짜별 강수 패턴을 계산합니다.
+            CSV 기반 위험점수에 기상청 초단기실황 강수 정보를 더해 선택 지역의 현재 위험도를 함께 보여줍니다.
           </p>
         </div>
 
@@ -31,7 +31,41 @@
               <option value="nonzero">강수 발생일 전체</option>
             </select>
           </label>
+          <label class="control api-control">
+            <span>기상청 ServiceKey</span>
+            <input id="kmaKeyInput" type="password" autocomplete="off" placeholder="브라우저에만 저장" />
+          </label>
+          <button id="saveKmaKey" class="icon-button" type="button">저장</button>
+          <button id="refreshLive" class="icon-button primary" type="button">실시간 갱신</button>
         </div>
+      </section>
+
+      <section class="live-strip" aria-label="기상청 실시간 정보">
+        <article class="live-card status-card">
+          <span>기상청 연동</span>
+          <strong id="liveStatus">대기</strong>
+          <p id="liveUpdated">-</p>
+        </article>
+        <article class="live-card">
+          <span>현재 1시간 강수</span>
+          <strong id="liveRain">-</strong>
+          <p id="liveBase">-</p>
+        </article>
+        <article class="live-card">
+          <span>기온</span>
+          <strong id="liveTemp">-</strong>
+          <p id="liveHumidity">습도 -</p>
+        </article>
+        <article class="live-card">
+          <span>풍속</span>
+          <strong id="liveWind">-</strong>
+          <p id="livePty">강수형태 -</p>
+        </article>
+        <article class="live-card live-score-card">
+          <span>실시간 보정 위험점수</span>
+          <strong id="liveAdjustedScore">-</strong>
+          <p id="liveBoost">CSV 기준 +0.0</p>
+        </article>
       </section>
 
       <section class="dashboard-grid">
@@ -133,53 +167,80 @@
       </section>
 
       <section class="detail-grid">
+        <article class="panel spark-panel">
+          <div class="panel-head">
+            <div>
+              <h2>PySpark RDD 분석 증거</h2>
+              <p id="sparkGenerated">-</p>
+            </div>
+            <span id="sparkStatus" class="status-pill">대기</span>
+          </div>
+          <div class="spark-grid">
+            <div><span>엔진</span><strong id="sparkEngine">-</strong></div>
+            <div><span>분석 행 수</span><strong id="sparkRows">-</strong></div>
+            <div><span>RDD 파티션</span><strong id="sparkPartitions">-</strong></div>
+            <div><span>실행 시간</span><strong id="sparkRuntime">-</strong></div>
+          </div>
+          <div class="formula-block">
+            <span>RDD 연산 흐름</span>
+            <code id="sparkOps">-</code>
+          </div>
+          <p id="sparkTopRegion" class="note">-</p>
+        </article>
+
         <article class="panel formula-panel">
           <h2>산출 기준</h2>
           <div class="formula-block">
-            <span>강수 위험</span>
+            <span>CSV 기반 강수 위험</span>
             <code>누적 30% + 최대일 25% + 최대시간 20% + 30mm 이상 15% + 2024년 10%</code>
           </div>
           <div class="formula-block">
-            <span>범람 노출 보정</span>
-            <code>저빈도 범람구역 비율 × (최대일 60% + 30mm 이상 40%)</code>
+            <span>기상청 실황 보정</span>
+            <code>현재 1시간 강수 + 강수형태 + 습도 + 풍속을 0~15점 보정값으로 환산</code>
           </div>
           <div class="formula-block">
-            <span>최종 위험점수</span>
-            <code>강수 위험 75% + 범람 노출 보정 25%</code>
+            <span>최종 표시 점수</span>
+            <code>CSV 위험점수 + 실시간 기상 보정값, 최대 100점</code>
           </div>
-          <p class="note">홍수범람구역 CSV에는 행정동코드가 없어 공간 조인 대신 도 전체 저빈도 범람 압력을 지역별 강수 극값에 보정했습니다.</p>
+          <p class="note">
+            홍수범람구역 CSV에는 행정동코드가 없어 전체 저빈도 범람 압력을 보정값으로 반영하고, 실시간 정보는 선택 지역의 대표 기상청 격자 기준으로 표시합니다.
+          </p>
         </article>
+      </section>
 
-        <article class="panel table-panel">
-          <div class="panel-head">
-            <div>
-              <h2>지역별 위험 순위</h2>
-              <p id="tableCaption">-</p>
-            </div>
+      <section class="panel table-panel">
+        <div class="panel-head">
+          <div>
+            <h2>지역별 위험 순위</h2>
+            <p id="tableCaption">-</p>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>순위</th>
-                  <th>지역</th>
-                  <th>코드</th>
-                  <th>최종</th>
-                  <th>강수</th>
-                  <th>범람보정</th>
-                  <th>누적강수</th>
-                  <th>최대일</th>
-                  <th>30mm 이상</th>
-                </tr>
-              </thead>
-              <tbody id="resultRows"></tbody>
-            </table>
-          </div>
-        </article>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>지역</th>
+                <th>코드</th>
+                <th>CSV 점수</th>
+                <th>실시간 보정</th>
+                <th>표시 점수</th>
+                <th>강수</th>
+                <th>범람보정</th>
+                <th>누적강수</th>
+                <th>최대일</th>
+                <th>30mm 이상</th>
+              </tr>
+            </thead>
+            <tbody id="resultRows"></tbody>
+          </table>
+        </div>
       </section>
     </main>
 
     <script src="dashboard-data.js"></script>
+    <script src="live-weather.js"></script>
+    <script src="spark-evidence.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

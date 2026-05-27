@@ -9,6 +9,8 @@
 - 지역 선택 후 월별 강수량, 날짜별 강수량 바 차트 확인
 - 2024년, 상위 강수일, 최근 관측일 등 날짜별 보기 전환
 - 홍수범람구역 빈도 분포와 주요 하천관리코드 현황 표시
+- 기상청 초단기실황조회 연동으로 현재 1시간 강수량을 위험점수에 보정
+- PySpark RDD 분석 증거 패널 표시
 
 ## 반영 데이터
 
@@ -28,6 +30,19 @@
 python scripts/build_data.py
 ```
 
+기상청 실시간 파일은 `KMA_SERVICE_KEY` 환경변수를 설정한 뒤 생성합니다.
+
+```bash
+python scripts/fetch_kma_weather.py
+```
+
+PySpark RDD 분석 증거 파일은 PySpark가 설치된 환경에서 생성합니다.
+
+```bash
+python -m pip install pyspark
+python scripts/build_spark_summary.py
+```
+
 ## 로컬 실행
 
 ```bash
@@ -39,5 +54,7 @@ npm start
 ## 배포
 
 GitHub Pages는 `gh-pages` 브랜치의 루트 경로를 사용합니다.
+
+저장소 Settings > Secrets and variables > Actions에 `KMA_SERVICE_KEY`를 추가하면 GitHub Actions가 30분마다 `live-weather.js`와 `spark-evidence.js`를 갱신합니다.
 
 배포 주소: https://hatcatrat.github.io/gyeongnam-flood-dashboard/

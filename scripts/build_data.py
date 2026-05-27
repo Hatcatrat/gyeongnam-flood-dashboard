@@ -1,284 +1,270 @@
 from __future__ import annotations
 
+import csv
 import json
+from collections import Counter, defaultdict
+from datetime import datetime
 from pathlib import Path
-
-import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DESKTOP = Path.home() / "Desktop"
 
-SOURCE_FILES = {
-    "flood": "5. rim022.csv",
-    "rain_history": "강수량.csv",
-    "rain_2024": "강수량_20240930.csv",
-    "admin_gyeongnam": "경상남도_행정동코드.csv",
-    "admin_all": "행정동코드.csv",
-}
+RAIN_FILES = [
+    DESKTOP / "강수량.csv",
+    DESKTOP / "강수량_20240930.csv",
+]
+CODE_FILE = DESKTOP / "행정동코드.csv"
+FLOOD_FILE = DESKTOP / "5. rim022.csv"
+OUT_FILE = ROOT / "dashboard-data.js"
 
 
-def source_path(name: str) -> Path:
-    path = DESKTOP / SOURCE_FILES[name]
-    if not path.exists():
-        raise FileNotFoundError(path)
-    return path
-
-
-def normalize(series: pd.Series) -> pd.Series:
-    max_value = float(series.max()) if len(series) else 0.0
-    if max_value <= 0:
-        return series.astype(float) * 0
-    return series.astype(float) / max_value
-
-
-def clean_float(value: object) -> float:
-    if pd.isna(value):
+def number(value: str) -> float:
+    try:
+        return float(str(value).replace(",", "").strip() or 0)
+    except ValueError:
         return 0.0
-    return round(float(value), 3)
 
 
-def build() -> dict:
-    rain_history = pd.read_csv(
-        source_path("rain_history"),
-        encoding="cp949",
-        dtype={"행정동코드": str},
-    )
-    rain_2024 = pd.read_csv(
-        source_path("rain_2024"),
-        encoding="cp949",
-        dtype={"행정동코드": str},
-    )
-    admin = pd.read_csv(
-        source_path("admin_gyeongnam"),
-        encoding="cp949",
-        dtype={"행정동코드": str},
-    )
-    flood = pd.read_csv(
-        source_path("flood"),
-        encoding="cp949",
-        usecols=["하천관리코드", "빈도"],
-        dtype={"하천관리코드": str},
-    )
+def rounded(value: float, digits: int = 1) -> float:
+    return round(float(value), digits)
 
-    rain = pd.concat([rain_history, rain_2024], ignore_index=True)
-    rain["측정일"] = pd.to_datetime(rain["측정일"], errors="coerce")
-    rain["강수량"] = pd.to_numeric(rain["강수량"], errors="coerce").fillna(0)
-    rain["행정동코드"] = rain["행정동코드"].astype(str).str.zfill(10)
-    rain = rain.dropna(subset=["측정일"])
 
-    admin["행정동코드"] = admin["행정동코드"].astype(str).str.zfill(10)
-    admin_lookup = admin.set_index("행정동코드")[["시도", "시군구", "행정동"]].to_dict("index")
+def max_or_one(values) -> float:
+    value = max(values) if values else 0
+    return value if value > 0 else 1
 
-    daily = (
-        rain.groupby(["행정동코드", "측정일"], as_index=False)["강수량"]
-        .sum()
-        .rename(columns={"강수량": "일강수량"})
-    )
-    daily["year"] = daily["측정일"].dt.year
-    daily["month"] = daily["측정일"].dt.month
-    daily["ym"] = daily["측정일"].dt.strftime("%Y-%m")
-    rain["year"] = rain["측정일"].dt.year
-    rain["month"] = rain["측정일"].dt.month
-    rain["ym"] = rain["측정일"].dt.strftime("%Y-%m")
 
-    summary = rain.groupby("행정동코드").agg(
-        totalRain=("강수량", "sum"),
-        maxHourly=("강수량", "max"),
-        heavy30=("강수량", lambda s: int((s >= 30).sum())),
-        heavy50=("강수량", lambda s: int((s >= 50).sum())),
-        recentRain=("강수량", lambda s: float(s[rain.loc[s.index, "year"] == 2024].sum())),
-        records=("강수량", "size"),
-    )
+def normalize(value: float, max_value: float) -> float:
+    return min(value / max_value, 1) if max_value else 0
 
-    daily_summary = daily.groupby("행정동코드").agg(
-        rainyDays=("일강수량", lambda s: int((s > 0).sum())),
-        maxDaily=("일강수량", "max"),
-    )
-    summary = summary.join(daily_summary, how="left").fillna(0)
 
-    monthly_by_region = (
-        rain.groupby(["행정동코드", "month"], as_index=False)["강수량"].sum()
-    )
-    timeline_by_region = (
-        rain.groupby(["행정동코드", "ym"], as_index=False)["강수량"].sum()
-    )
-    top_daily_by_region = (
-        daily.sort_values(["행정동코드", "일강수량"], ascending=[True, False])
-        .groupby("행정동코드")
-        .head(20)
-    )
+def flood_weight(freq: float) -> float:
+    if freq <= 0:
+        return 0.0
+    if freq <= 10:
+        return 5.0
+    if freq <= 20:
+        return 4.5
+    if freq <= 30:
+        return 4.0
+    if freq <= 50:
+        return 3.0
+    if freq <= 80:
+        return 2.0
+    if freq <= 100:
+        return 1.5
+    if freq <= 150:
+        return 1.0
+    return 0.5
 
-    summary["rainScore"] = (
-        normalize(summary["totalRain"]) * 0.35
-        + normalize(summary["maxHourly"]) * 0.30
-        + normalize(summary["heavy30"]) * 0.25
-        + normalize(summary["recentRain"]) * 0.10
+
+def read_code_map() -> dict[str, dict[str, str]]:
+    code_map: dict[str, dict[str, str]] = {}
+    with CODE_FILE.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            code = row["행정동코드"].strip()
+            code_map[code] = {
+                "sido": row.get("시도명", "").strip(),
+                "sigungu": row.get("시군구명", "").strip(),
+                "dong": row.get("행정동명", "").strip(),
+            }
+    return code_map
+
+
+def read_rain() -> tuple[dict, list[str], list[str], dict]:
+    metrics = defaultdict(
+        lambda: {
+            "totalRain": 0.0,
+            "recentRain": 0.0,
+            "maxHourly": 0.0,
+            "heavy30Hours": 0,
+            "heavy50Hours": 0,
+            "recordCount": 0,
+        }
     )
-    summary["floodProxyRaw"] = (
-        normalize(summary["maxDaily"]) * 0.35
-        + normalize(summary["heavy50"]) * 0.30
-        + normalize(summary["heavy30"]) * 0.20
-        + normalize(summary["maxHourly"]) * 0.15
-    )
-    summary["floodProxyScore"] = normalize(summary["floodProxyRaw"])
-    summary["baseRiskScore"] = summary["rainScore"] * 0.55 + summary["floodProxyScore"] * 0.45
-    summary = summary.sort_values("baseRiskScore", ascending=False)
+    daily = defaultdict(float)
+    monthly = defaultdict(float)
+    all_dates: set[str] = set()
+    all_months: set[str] = set()
+    source_rows = {}
+
+    for path in RAIN_FILES:
+        rows = 0
+        with path.open("r", encoding="cp949", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                code = row["행정동코드"].strip()
+                date = row["측정일"].strip()
+                rain = number(row["강수량"])
+                month = date[:7]
+                item = metrics[code]
+
+                item["totalRain"] += rain
+                item["recordCount"] += 1
+                item["maxHourly"] = max(item["maxHourly"], rain)
+                item["heavy30Hours"] += 1 if rain >= 30 else 0
+                item["heavy50Hours"] += 1 if rain >= 50 else 0
+                if date >= "2024-01-01":
+                    item["recentRain"] += rain
+
+                daily[(code, date)] += rain
+                monthly[(code, month)] += rain
+                all_dates.add(date)
+                all_months.add(month)
+                rows += 1
+        source_rows[path.name] = rows
+
+    date_list = sorted(all_dates)
+    month_list = sorted(all_months)
+
+    for code, item in metrics.items():
+        item["maxDaily"] = max(daily.get((code, date), 0.0) for date in date_list)
+        item["maxMonthly"] = max(monthly.get((code, month), 0.0) for month in month_list)
+        item["rainDays"] = sum(1 for date in date_list if daily.get((code, date), 0.0) > 0)
+        item["heavy30Days"] = sum(1 for date in date_list if daily.get((code, date), 0.0) >= 30)
+        item["heavy50Days"] = sum(1 for date in date_list if daily.get((code, date), 0.0) >= 50)
+
+    return metrics, date_list, month_list, {
+        "daily": daily,
+        "monthly": monthly,
+        "sourceRows": source_rows,
+    }
+
+
+def read_flood() -> dict:
+    freq_counts: Counter[str] = Counter()
+    river_stats = defaultdict(lambda: {"zoneCount": 0, "lowFreqCount": 0, "weightedScore": 0.0})
+    total = 0
+    low = 0
+    weighted_total = 0.0
+
+    with FLOOD_FILE.open("r", encoding="cp949", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            river_code = row["하천관리코드"].strip()
+            freq = number(row["빈도"])
+            key = "미상" if freq <= 0 else str(int(freq)) if freq.is_integer() else str(freq)
+            weight = flood_weight(freq)
+            total += 1
+            low += 1 if 0 < freq <= 50 else 0
+            weighted_total += weight
+            freq_counts[key] += 1
+            river_stats[river_code]["zoneCount"] += 1
+            river_stats[river_code]["weightedScore"] += weight
+            river_stats[river_code]["lowFreqCount"] += 1 if 0 < freq <= 50 else 0
+
+    top_rivers = sorted(
+        (
+            {
+                "riverCode": code,
+                "zoneCount": stat["zoneCount"],
+                "lowFreqCount": stat["lowFreqCount"],
+                "weightedScore": rounded(stat["weightedScore"], 1),
+            }
+            for code, stat in river_stats.items()
+        ),
+        key=lambda item: (item["weightedScore"], item["zoneCount"]),
+        reverse=True,
+    )[:12]
+
+    return {
+        "totalZones": total,
+        "lowFrequencyZones": low,
+        "lowFrequencyRatio": rounded(low / total if total else 0, 4),
+        "weightedTotal": rounded(weighted_total, 1),
+        "frequencyCounts": [
+            {"frequency": key, "count": freq_counts[key]}
+            for key in sorted(freq_counts, key=lambda value: 9999 if value == "미상" else float(value))
+        ],
+        "topRivers": top_rivers,
+    }
+
+
+def build_payload() -> dict:
+    code_map = read_code_map()
+    metrics, date_list, month_list, series = read_rain()
+    flood = read_flood()
+
+    max_total = max_or_one(item["totalRain"] for item in metrics.values())
+    max_recent = max_or_one(item["recentRain"] for item in metrics.values())
+    max_hourly = max_or_one(item["maxHourly"] for item in metrics.values())
+    max_daily = max_or_one(item["maxDaily"] for item in metrics.values())
+    max_heavy30 = max_or_one(item["heavy30Hours"] for item in metrics.values())
+    flood_pressure = flood["lowFrequencyRatio"]
 
     regions = []
-    for code, row in summary.iterrows():
-        lookup = admin_lookup.get(code, {})
-        sigungu = lookup.get("시군구")
-        admin_name = lookup.get("행정동")
-        display_name = admin_name if isinstance(admin_name, str) and admin_name.strip() else sigungu
-        if not isinstance(display_name, str) or not display_name.strip():
-            display_name = code
+    for code, item in metrics.items():
+        code_info = code_map.get(code, {})
+        name = code_info.get("sigungu") or code_info.get("dong") or code
+        rain_risk = (
+            normalize(item["totalRain"], max_total) * 0.30
+            + normalize(item["maxDaily"], max_daily) * 0.25
+            + normalize(item["maxHourly"], max_hourly) * 0.20
+            + normalize(item["heavy30Hours"], max_heavy30) * 0.15
+            + normalize(item["recentRain"], max_recent) * 0.10
+        )
+        flood_exposure = flood_pressure * (
+            normalize(item["maxDaily"], max_daily) * 0.60
+            + normalize(item["heavy30Hours"], max_heavy30) * 0.40
+        )
+        final_score = rain_risk * 0.75 + flood_exposure * 0.25
 
-        monthly_rows = monthly_by_region[monthly_by_region["행정동코드"] == code]
-        monthly_map = {
-            int(r["month"]): clean_float(r["강수량"])
-            for _, r in monthly_rows.iterrows()
-        }
-        monthly = [
-            {"month": f"{month}월", "rain": monthly_map.get(month, 0.0)}
-            for month in range(1, 13)
-        ]
-
-        timeline_rows = timeline_by_region[timeline_by_region["행정동코드"] == code]
-        monthly_timeline = [
-            {"month": str(r["ym"]), "rain": clean_float(r["강수량"])}
-            for _, r in timeline_rows.iterrows()
-        ]
-
-        daily_rows = top_daily_by_region[top_daily_by_region["행정동코드"] == code]
-        daily_top = [
-            {
-                "date": r.측정일.strftime("%Y-%m-%d"),
-                "rain": clean_float(r.일강수량),
-            }
-            for r in daily_rows.itertuples(index=False)
-        ]
-
-        top_day = daily_top[0]["date"] if daily_top else "-"
         regions.append(
             {
                 "code": code,
-                "name": display_name,
-                "sido": lookup.get("시도") if isinstance(lookup.get("시도"), str) else "경상남도",
-                "sigungu": sigungu if isinstance(sigungu, str) else display_name,
-                "totalRain": clean_float(row["totalRain"]),
-                "maxHourly": clean_float(row["maxHourly"]),
-                "heavy30": int(row["heavy30"]),
-                "heavy50": int(row["heavy50"]),
-                "recentRain": clean_float(row["recentRain"]),
-                "rainyDays": int(row["rainyDays"]),
-                "maxDaily": clean_float(row["maxDaily"]),
-                "topDay": top_day,
-                "records": int(row["records"]),
-                "rainScore": round(float(row["rainScore"]), 5),
-                "floodProxyScore": round(float(row["floodProxyScore"]), 5),
-                "baseRiskScore": round(float(row["baseRiskScore"]), 5),
-                "monthly": monthly,
-                "monthlyTimeline": monthly_timeline,
-                "dailyTop": daily_top,
+                "name": name,
+                "sido": code_info.get("sido", ""),
+                "totalRain": rounded(item["totalRain"]),
+                "recentRain": rounded(item["recentRain"]),
+                "maxHourly": rounded(item["maxHourly"]),
+                "maxDaily": rounded(item["maxDaily"]),
+                "maxMonthly": rounded(item["maxMonthly"]),
+                "rainDays": item["rainDays"],
+                "heavy30Hours": item["heavy30Hours"],
+                "heavy50Hours": item["heavy50Hours"],
+                "heavy30Days": item["heavy30Days"],
+                "heavy50Days": item["heavy50Days"],
+                "rainRiskScore": rounded(rain_risk * 100),
+                "floodExposureScore": rounded(flood_exposure * 100),
+                "finalScore": rounded(final_score * 100),
+                "monthly": [
+                    rounded(series["monthly"].get((code, month), 0.0))
+                    for month in month_list
+                ],
+                "daily": [
+                    rounded(series["daily"].get((code, date), 0.0))
+                    for date in date_list
+                ],
             }
         )
 
-    flood["빈도"] = pd.to_numeric(flood["빈도"], errors="coerce").fillna(0).astype(int)
-    weight_map = {10: 5.0, 20: 4.5, 30: 4.0, 50: 3.0, 80: 2.5, 100: 2.0, 120: 1.8, 150: 1.5, 200: 1.0}
-    flood["weight"] = flood["빈도"].map(weight_map).fillna(1.0)
-    flood["weighted"] = flood["weight"]
-
-    frequency_counts = (
-        flood.groupby("빈도").size().reset_index(name="count").sort_values("빈도")
-    )
-    river_risk = (
-        flood.groupby("하천관리코드")
-        .agg(zoneCount=("빈도", "size"), weightedScore=("weighted", "sum"), minFrequency=("빈도", "min"))
-        .sort_values(["weightedScore", "zoneCount"], ascending=False)
-        .head(20)
-        .reset_index()
-    )
-
-    low_frequency = int(flood[flood["빈도"] <= 50].shape[0])
-    flood_summary = {
-        "totalZones": int(len(flood)),
-        "lowFrequencyZones": low_frequency,
-        "lowFrequencyShare": round(low_frequency / len(flood), 5),
-        "weightedScore": round(float(flood["weighted"].sum()), 2),
-        "frequencyCounts": [
-            {"frequency": int(r["빈도"]), "count": int(r["count"])}
-            for _, r in frequency_counts.iterrows()
-        ],
-        "riverRiskTop": [
-            {
-                "riverCode": str(r.하천관리코드),
-                "zoneCount": int(r.zoneCount),
-                "weightedScore": round(float(r.weightedScore), 1),
-                "minFrequency": int(r.minFrequency),
-            }
-            for r in river_risk.itertuples(index=False)
-        ],
-        "frequencyWeights": {str(k): v for k, v in weight_map.items()},
-    }
-
-    all_daily = (
-        daily.groupby("측정일", as_index=False)["일강수량"]
-        .sum()
-        .sort_values("일강수량", ascending=False)
-        .head(20)
-    )
-    all_monthly = rain.groupby("month", as_index=False)["강수량"].sum()
-    all_timeline = rain.groupby("ym", as_index=False)["강수량"].sum()
+    regions.sort(key=lambda item: item["finalScore"], reverse=True)
 
     return {
-        "generatedAt": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "sources": SOURCE_FILES,
-        "dateRange": {
-            "start": rain["측정일"].min().strftime("%Y-%m-%d"),
-            "end": rain["측정일"].max().strftime("%Y-%m-%d"),
+        "generatedAt": datetime.now().isoformat(timespec="seconds"),
+        "sources": {
+            "rainRows": series["sourceRows"],
+            "rainStartDate": date_list[0],
+            "rainEndDate": date_list[-1],
+            "regionCount": len(regions),
+            "dateCount": len(date_list),
+            "monthCount": len(month_list),
         },
-        "recordCounts": {
-            "rain": int(len(rain)),
-            "rainHistory": int(len(rain_history)),
-            "rain2024": int(len(rain_2024)),
-            "regions": int(summary.shape[0]),
-            "floodZones": int(len(flood)),
-        },
-        "formula": {
-            "rainRisk": "0.35*누적강수량 + 0.30*최대시간강수량 + 0.25*30mm이상횟수 + 0.10*2024강수량",
-            "floodProxy": "0.35*최대일강수량 + 0.30*50mm이상횟수 + 0.20*30mm이상횟수 + 0.15*최대시간강수량",
-            "floodFrequency": "낮은 빈도일수록 큰 가중치(10년=5.0, 20년=4.5, 30년=4.0, 50년=3.0)",
-        },
+        "dates": date_list,
+        "months": month_list,
         "regions": regions,
-        "overall": {
-            "monthly": [
-                {"month": f"{int(r['month'])}월", "rain": clean_float(r["강수량"])}
-                for _, r in all_monthly.iterrows()
-            ],
-            "monthlyTimeline": [
-                {"month": str(r["ym"]), "rain": clean_float(r["강수량"])}
-                for _, r in all_timeline.iterrows()
-            ],
-            "dailyTop": [
-                {"date": r.측정일.strftime("%Y-%m-%d"), "rain": clean_float(r.일강수량)}
-                for r in all_daily.itertuples(index=False)
-            ],
-        },
-        "flood": flood_summary,
+        "flood": flood,
     }
 
 
 def main() -> None:
-    data = build()
-    output = ROOT / "data.js"
-    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-    output.write_text(f"window.FLOOD_DASHBOARD_DATA = {payload};\n", encoding="utf-8")
-    print(f"wrote {output}")
-    print(f"regions: {len(data['regions'])}, rain records: {data['recordCounts']['rain']}, flood zones: {data['recordCounts']['floodZones']}")
-    print("top regions:")
-    for row in data["regions"][:5]:
-        print(row["name"], row["code"], row["baseRiskScore"])
+    payload = build_payload()
+    json_text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    OUT_FILE.write_text(f"globalThis.FLOOD_DASHBOARD_DATA = {json_text};\n", encoding="utf-8")
+    print(f"Wrote {OUT_FILE} ({OUT_FILE.stat().st_size:,} bytes)")
+    print(f"Regions: {payload['sources']['regionCount']}, dates: {payload['sources']['dateCount']}")
 
 
 if __name__ == "__main__":

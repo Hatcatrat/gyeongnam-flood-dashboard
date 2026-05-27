@@ -14,7 +14,10 @@ RAIN_FILES = [
     DESKTOP / "강수량.csv",
     DESKTOP / "강수량_20240930.csv",
 ]
-CODE_FILE = DESKTOP / "행정동코드.csv"
+CODE_FILES = [
+    (DESKTOP / "경상남도_행정동코드.csv", "cp949"),
+    (DESKTOP / "행정동코드.csv", "utf-8-sig"),
+]
 FLOOD_FILE = DESKTOP / "5. rim022.csv"
 OUT_FILE = ROOT / "dashboard-data.js"
 
@@ -59,18 +62,23 @@ def flood_weight(freq: float) -> float:
     return 0.5
 
 
-def read_code_map() -> dict[str, dict[str, str]]:
+def read_code_map() -> tuple[dict[str, dict[str, str]], dict[str, int]]:
     code_map: dict[str, dict[str, str]] = {}
-    with CODE_FILE.open("r", encoding="utf-8-sig", newline="") as handle:
-        reader = csv.DictReader(handle)
-        for row in reader:
-            code = row["행정동코드"].strip()
-            code_map[code] = {
-                "sido": row.get("시도명", "").strip(),
-                "sigungu": row.get("시군구명", "").strip(),
-                "dong": row.get("행정동명", "").strip(),
-            }
-    return code_map
+    source_rows: dict[str, int] = {}
+    for path, encoding in CODE_FILES:
+        rows = 0
+        with path.open("r", encoding=encoding, newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                code = row["행정동코드"].strip()
+                code_map[code] = {
+                    "sido": row.get("시도명", "").strip(),
+                    "sigungu": row.get("시군구명", "").strip(),
+                    "dong": row.get("행정동명", "").strip(),
+                }
+                rows += 1
+        source_rows[path.name] = rows
+    return code_map, source_rows
 
 
 def read_rain() -> tuple[dict, list[str], list[str], dict]:
@@ -183,7 +191,7 @@ def read_flood() -> dict:
 
 
 def build_payload() -> dict:
-    code_map = read_code_map()
+    code_map, code_sources = read_code_map()
     metrics, date_list, month_list, series = read_rain()
     flood = read_flood()
 
@@ -246,6 +254,7 @@ def build_payload() -> dict:
         "generatedAt": datetime.now().isoformat(timespec="seconds"),
         "sources": {
             "rainRows": series["sourceRows"],
+            "codeRows": code_sources,
             "rainStartDate": date_list[0],
             "rainEndDate": date_list[-1],
             "regionCount": len(regions),

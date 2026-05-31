@@ -1,46 +1,32 @@
-# 경남 홍수 범람 위험 지역 대시보드
+# 경남 홍수 범람 빅데이터 위험 모니터링 대시보드
 
-경상남도 강수량, 2024년 강수량, 행정동코드, 홍수범람구역 CSV를 종합해 지역별 홍수 범람 위험 점수를 계산하고 시각화하는 정적 웹 대시보드입니다.
+기존 CSV 기반 홍수 범람 위험 시각화를 “실시간·준실시간 데이터를 주기적으로 수집하고 Spark RDD로 지역별 위험 점수를 지속 계산해 웹 대시보드에 반영하는 빅데이터 위험 모니터링 시스템”으로 확장한 프로젝트입니다.
 
-## 주요 기능
+## 핵심 기능
 
-- 행정동코드 기준 22개 지역 위험점수 산출
-- 위험점수가 높은 지역은 큰 빨간 타일, 낮은 지역은 작은 녹색 타일로 표시
-- 지역 선택 후 월별 강수량, 날짜별 강수량 바 차트 확인
-- 2024년, 상위 강수일, 최근 관측일 등 날짜별 보기 전환
-- 홍수범람구역 빈도 분포와 주요 하천관리코드 현황 표시
-- 기상청 초단기실황조회 연동으로 현재 1시간 강수량을 위험점수에 보정
-- PySpark RDD 분석 증거 패널 표시
+- `risk_latest`, `risk_history`, `risk_feature` 저장 구조 기반 대시보드
+- Spark RDD 핵심 연산(`map`, `filter`, `join`, `reduceByKey`, `mapValues`) 기반 위험 점수 계산
+- 행정동코드 기준 현재 위험 지도, 위험 순위, 시간대별 변화, 원인 분해 표시
+- 기상청 초단기실황조회 연동 준비 및 브라우저 ServiceKey 수동 갱신 지원
+- API 키 없이도 실행 가능한 sample 데이터와 mock 배치 파이프라인 제공
+- Structured Streaming `foreachBatch` 확장 포인트 제공
 
-## 반영 데이터
+## 구조
 
-- `강수량.csv`
-- `강수량_20240930.csv`
-- `행정동코드.csv`
-- `경상남도_행정동코드.csv`
-- `5. rim022.csv`
-
-홍수범람구역 CSV에는 행정동코드가 직접 포함되어 있지 않아, 지역별 점수에는 강수 극값과 관측 패턴을 중심으로 반영하고 범람구역 빈도는 경남 전체 보정값 및 별도 현황 그래프로 함께 표시합니다.
-
-## 데이터 갱신
-
-원본 CSV가 바뀌면 아래 명령으로 `dashboard-data.js`를 다시 생성합니다.
-
-```bash
-python scripts/build_data.py
-```
-
-기상청 실시간 파일은 `KMA_SERVICE_KEY` 환경변수를 설정한 뒤 생성합니다.
-
-```bash
-python scripts/fetch_kma_weather.py
-```
-
-PySpark RDD 분석 증거 파일은 PySpark가 설치된 환경에서 생성합니다.
-
-```bash
-python -m pip install pyspark
-python scripts/build_spark_summary.py
+```text
+backend/
+  app/api/risk_api.py
+  app/repositories/file_repository.py
+  spark/jobs/calculate_risk_batch.py
+  spark/rdd/risk_score_engine.py
+  spark/streaming/risk_streaming_job.py
+data/
+  sample/
+  processed/
+docs/
+  architecture.md
+  data_schema.md
+tests/
 ```
 
 ## 로컬 실행
@@ -49,12 +35,70 @@ python scripts/build_spark_summary.py
 npm start
 ```
 
-브라우저에서 `http://localhost:8000`을 열면 됩니다.
+브라우저에서 `http://localhost:8000`을 엽니다.
+
+## 샘플 데이터로 배치 실행
+
+PySpark가 있으면 Spark RDD로 실행되고, 없으면 동일한 RDD 연산 인터페이스의 로컬 샘플 어댑터로 실행됩니다.
+
+```bash
+python -m backend.spark.jobs.calculate_risk_batch --engine auto
+```
+
+생성 파일:
+
+- `data/processed/risk_latest.json`
+- `data/processed/risk_history.json`
+- `data/processed/risk_feature.json`
+- `risk-latest.js`
+- `risk-history.js`
+- `risk-feature.js`
+
+## PySpark 설치 후 실제 Spark RDD 실행
+
+```bash
+python -m pip install pyspark
+python -m backend.spark.jobs.calculate_risk_batch --engine spark
+```
+
+## API 실행
+
+```bash
+npm run api
+```
+
+주요 엔드포인트:
+
+- `GET /api/risk/latest`
+- `GET /api/risk/latest/{grid_id}`
+- `GET /api/risk/history/{grid_id}`
+- `GET /api/risk/ranking`
+- `GET /api/risk/features/{grid_id}`
+
+## 기상청 연동
+
+GitHub Pages는 서버가 없어 API 키를 숨길 수 없습니다. 공개 링크에서 실시간 값을 갱신하려면 브라우저의 `기상청 ServiceKey` 입력칸에 키를 저장하고 `실시간 갱신`을 누릅니다.
+
+자동 갱신은 GitHub Actions Secret에 `KMA_SERVICE_KEY`를 추가하면 동작합니다.
+
+```bash
+python scripts/fetch_kma_weather.py
+```
+
+## 테스트 실행
+
+```bash
+npm test
+```
+
+또는:
+
+```bash
+python -m unittest discover -s tests
+```
 
 ## 배포
 
-GitHub Pages는 `gh-pages` 브랜치의 루트 경로를 사용합니다.
-
-저장소 Settings > Secrets and variables > Actions에 `KMA_SERVICE_KEY`를 추가하면 GitHub Actions가 30분마다 `live-weather.js`와 `spark-evidence.js`를 갱신합니다.
+GitHub Pages는 `gh-pages` 브랜치 루트를 사용합니다.
 
 배포 주소: https://hatcatrat.github.io/gyeongnam-flood-dashboard/

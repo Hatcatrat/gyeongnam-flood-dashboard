@@ -1,0 +1,26 @@
+{
+  "batch": {
+    "rain_1h": 0.3,
+    "rain_3h": 0.25,
+    "water_level": 0.25,
+    "water_level_diff": 0.1,
+    "flood_history_score": 0.05,
+    "slope_score": 0.05
+  },
+  "near_real_time": {
+    "rain_10m": 0.25,
+    "rain_1h": 0.25,
+    "water_level": 0.3,
+    "water_level_diff": 0.15,
+    "flood_history_score": 0.05
+  },
+  "normalization": {
+    "rain_10m": 30,
+    "rain_1h": 80,
+    "rain_3h": 180,
+    "water_level": 8,
+    "water_level_diff": 1.5,
+    "flood_history_score": 100,
+    "slope_score": 100
+  }
+}

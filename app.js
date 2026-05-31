@@ -1,6 +1,12 @@
 const DATA = globalThis.FLOOD_DASHBOARD_DATA;
 const LIVE_WEATHER = globalThis.LIVE_WEATHER || { status: "missing_key", regions: [] };
 const SPARK_EVIDENCE = globalThis.SPARK_EVIDENCE || { status: "pending" };
+const RISK_LATEST = globalThis.RISK_LATEST || { status: "pending", rows: [] };
+const RISK_HISTORY = globalThis.RISK_HISTORY || { status: "pending", rows: [] };
+const RISK_FEATURE = globalThis.RISK_FEATURE || { status: "pending", rows: [] };
+
+const latestByCode = Object.fromEntries((RISK_LATEST.rows || []).map((item) => [item.grid_id, item]));
+const featureByCode = Object.fromEntries((RISK_FEATURE.rows || []).map((item) => [item.grid_id, item]));
 
 const REGION_GRID = {
   "4812100000": { nx: 90, ny: 77, label: "창원시 의창구" },
@@ -69,11 +75,15 @@ const el = {
   heavyHours: document.querySelector("#heavyHours"),
   monthlyCaption: document.querySelector("#monthlyCaption"),
   dailyCaption: document.querySelector("#dailyCaption"),
+  historyCaption: document.querySelector("#historyCaption"),
   floodCaption: document.querySelector("#floodCaption"),
   monthlyChart: document.querySelector("#monthlyChart"),
   dailyChart: document.querySelector("#dailyChart"),
+  riskHistoryChart: document.querySelector("#riskHistoryChart"),
   floodFreqChart: document.querySelector("#floodFreqChart"),
   riverBars: document.querySelector("#riverBars"),
+  featureBars: document.querySelector("#featureBars"),
+  featureCaption: document.querySelector("#featureCaption"),
   sparkStatus: document.querySelector("#sparkStatus"),
   sparkGenerated: document.querySelector("#sparkGenerated"),
   sparkEngine: document.querySelector("#sparkEngine"),
@@ -117,6 +127,16 @@ function riskLabel(score) {
   if (score >= 68) return "높음";
   if (score >= 52) return "주의";
   return "낮음";
+}
+
+function levelLabel(level) {
+  const labels = {
+    LOW: "낮음",
+    CAUTION: "주의",
+    WARNING: "경계",
+    DANGER: "위험",
+  };
+  return labels[level] || level || "-";
 }
 
 function tileColor(score, rank) {
@@ -211,6 +231,21 @@ function getRegion(code) {
   return DATA.regions.find((item) => item.code === code) || DATA.regions[0];
 }
 
+function riskLatestFor(code) {
+  return latestByCode[code] || null;
+}
+
+function riskFeatureFor(code) {
+  return featureByCode[code] || null;
+}
+
+function riskHistoryFor(code) {
+  return (RISK_HISTORY.rows || [])
+    .filter((row) => row.grid_id === code)
+    .slice()
+    .sort((a, b) => String(a.calculated_at).localeCompare(String(b.calculated_at)));
+}
+
 function liveFor(code) {
   return state.liveByCode[code] || null;
 }
@@ -241,18 +276,33 @@ function liveBoost(weather) {
   return Math.min(15, rainScore + ptyScore + humidityScore + windScore);
 }
 
+function baseRiskScore(region) {
+  return Number(riskLatestFor(region.code)?.risk_score ?? region.finalScore);
+}
+
 function displayScore(region) {
-  return Math.min(100, region.finalScore + liveBoost(liveFor(region.code)));
+  return Math.min(100, baseRiskScore(region) + liveBoost(liveFor(region.code)));
 }
 
 function scoredRegions() {
   return DATA.regions
     .map((region) => ({
       ...region,
+      latest: riskLatestFor(region.code),
+      riskLevel: riskLatestFor(region.code)?.risk_level || classifyDisplayScore(baseRiskScore(region)),
+      scoreDelta: Number(riskLatestFor(region.code)?.score_delta || 0),
+      batchScore: baseRiskScore(region),
       liveBoost: liveBoost(liveFor(region.code)),
       displayScore: displayScore(region),
     }))
-    .sort((a, b) => b.displayScore - a.displayScore || b.finalScore - a.finalScore);
+    .sort((a, b) => b.displayScore - a.displayScore || b.batchScore - a.batchScore);
+}
+
+function classifyDisplayScore(score) {
+  if (score >= 80) return "DANGER";
+  if (score >= 60) return "WARNING";
+  if (score >= 40) return "CAUTION";
+  return "LOW";
 }
 
 function getKmaBaseTime() {
@@ -346,7 +396,7 @@ function renderRegionOptions() {
 function renderLive(region) {
   const weather = liveFor(region.code);
   const boost = liveBoost(weather);
-  const adjusted = Math.min(100, region.finalScore + boost);
+  const adjusted = Math.min(100, baseRiskScore(region) + boost);
   const hasKey = Boolean(localStorage.getItem("kmaServiceKey"));
 
   if (state.liveStatus === "loading") {
@@ -369,7 +419,7 @@ function renderLive(region) {
   el.liveWind.textContent = weather ? formatNumber(weather.windSpeed, "m/s") : "-";
   el.livePty.textContent = weather ? `강수형태 ${ptyLabel(weather.precipitationType)}` : "강수형태 -";
   el.liveAdjustedScore.textContent = adjusted.toFixed(1);
-  el.liveBoost.textContent = `CSV 기준 +${boost.toFixed(1)}`;
+  el.liveBoost.textContent = `risk_latest 기준 +${boost.toFixed(1)}`;
 }
 
 function renderTiles(scored) {
@@ -391,7 +441,7 @@ function renderTiles(scored) {
             <span>${escapeHtml(region.code)}</span>
           </div>
           <div class="tile-score">
-            <span class="tile-meta">실시간 +${region.liveBoost.toFixed(1)}</span>
+            <span class="tile-meta">${levelLabel(region.riskLevel)} · ${region.scoreDelta >= 5 ? "급상승" : `변화 ${region.scoreDelta.toFixed(1)}`}</span>
             <strong>${region.displayScore.toFixed(1)}</strong>
           </div>
         </button>
@@ -424,22 +474,53 @@ function dailyItems(region) {
 
 function renderSummary(region) {
   const boost = liveBoost(liveFor(region.code));
-  const adjusted = Math.min(100, region.finalScore + boost);
+  const latest = riskLatestFor(region.code);
+  const adjusted = Math.min(100, baseRiskScore(region) + boost);
   el.selectedCode.textContent = region.code;
   el.selectedName.textContent = region.name;
   el.finalScore.textContent = adjusted.toFixed(1);
-  el.riskGrade.textContent = riskLabel(adjusted);
+  el.riskGrade.textContent = latest ? levelLabel(latest.risk_level) : riskLabel(adjusted);
   el.rainScore.textContent = region.rainRiskScore.toFixed(1);
   el.floodScore.textContent = region.floodExposureScore.toFixed(1);
   el.rainBar.style.width = `${Math.min(region.rainRiskScore, 100)}%`;
   el.floodBar.style.width = `${Math.min(region.floodExposureScore, 100)}%`;
-  el.riskSignal.textContent = `${region.name}은 CSV 기준 ${region.finalScore.toFixed(1)}점이며 현재 기상 보정 ${boost.toFixed(
-    1,
-  )}점을 더해 표시합니다.`;
+  el.riskSignal.textContent = latest
+    ? `${region.name}은 risk_latest 기준 ${latest.risk_score.toFixed(1)}점, ${levelLabel(latest.risk_level)} 단계입니다. 배치 ${latest.batch_id}에서 계산됐고 실황 보정 ${boost.toFixed(1)}점을 더해 표시합니다.`
+    : `${region.name}은 CSV 기준 ${region.finalScore.toFixed(1)}점이며 현재 기상 보정 ${boost.toFixed(1)}점을 더해 표시합니다.`;
   el.totalRain.textContent = formatNumber(region.totalRain, "mm");
   el.maxDaily.textContent = formatNumber(region.maxDaily, "mm");
   el.maxHourly.textContent = formatNumber(region.maxHourly, "mm");
   el.heavyHours.textContent = `${region.heavy30Hours}시간`;
+}
+
+function renderFeatureBreakdown(region) {
+  const feature = riskFeatureFor(region.code);
+  if (!feature) {
+    el.featureBars.innerHTML = `<p class="note">선택 지역의 risk_feature 저장값이 아직 없습니다.</p>`;
+    el.featureCaption.textContent = "배치 실행 후 위험 원인 분해가 표시됩니다.";
+    return;
+  }
+
+  const items = [
+    ["강우량", Number(feature.rain_contribution || 0), "#2b7ec8"],
+    ["수위", Number(feature.water_level_contribution || 0), "#d94a3a"],
+    ["침수 이력", Number(feature.flood_history_contribution || 0), "#f0a533"],
+    ["지형", Number(feature.terrain_contribution || 0), "#39a275"],
+  ];
+  const total = Math.max(items.reduce((sum, item) => sum + item[1], 0), 1);
+  el.featureBars.innerHTML = items
+    .map(([label, value, color]) => {
+      const pct = Math.round((value / total) * 100);
+      return `
+        <div class="feature-bar">
+          <span>${label}</span>
+          <b>${pct}%</b>
+          <i><em style="width:${pct}%; background:${color};"></em></i>
+        </div>
+      `;
+    })
+    .join("");
+  el.featureCaption.textContent = `rain_10m ${feature.rain_10m}mm · rain_1h ${feature.rain_1h}mm · 수위 ${feature.water_level}m`;
 }
 
 function renderCharts(region) {
@@ -457,9 +538,16 @@ function renderCharts(region) {
     value: item.count,
     color: Number(item.frequency) <= 50 ? "#d94a3a" : "#39a275",
   }));
+  const history = riskHistoryFor(region.code);
+  const historyItems = (history.length ? history : [{ calculated_at: new Date().toISOString(), risk_score: baseRiskScore(region) }]).slice(-12).map((item) => ({
+    label: formatDateTime(item.calculated_at),
+    value: Number(item.risk_score || 0),
+    color: Number(item.risk_score || 0) >= 80 ? "#d94a3a" : Number(item.risk_score || 0) >= 60 ? "#f0a533" : "#39a275",
+  }));
 
   el.monthlyCaption.textContent = `${DATA.sources.rainStartDate} ~ ${DATA.sources.rainEndDate} · ${DATA.months.length}개월`;
   el.dailyCaption.textContent = `${region.name} · ${el.dateMode.options[el.dateMode.selectedIndex].textContent}`;
+  el.historyCaption.textContent = `${region.name} · 최근 ${historyItems.length}개 배치`;
   el.floodCaption.textContent = `저빈도(50년 이하) ${formatNumber(DATA.flood.lowFrequencyZones, "", 0)} / ${formatNumber(
     DATA.flood.totalZones,
     "",
@@ -468,6 +556,7 @@ function renderCharts(region) {
 
   drawBarChart(el.monthlyChart, monthly, { bottom: 62 });
   drawBarChart(el.dailyChart, daily, { bottom: 72 });
+  drawBarChart(el.riskHistoryChart, historyItems, { bottom: 70 });
   drawBarChart(el.floodFreqChart, floodFreq, { bottom: 58 });
 }
 
@@ -516,7 +605,7 @@ function renderTable(scored) {
           <td><span class="rank-pill">${index + 1}</span></td>
           <td>${escapeHtml(region.name)}</td>
           <td>${escapeHtml(region.code)}</td>
-          <td class="score-cell">${region.finalScore.toFixed(1)}</td>
+          <td class="score-cell">${region.batchScore.toFixed(1)}</td>
           <td>+${region.liveBoost.toFixed(1)}</td>
           <td class="score-cell">${region.displayScore.toFixed(1)}</td>
           <td>${region.rainRiskScore.toFixed(1)}</td>
@@ -538,6 +627,7 @@ function render() {
   renderLive(region);
   renderTiles(scored);
   renderSummary(region);
+  renderFeatureBreakdown(region);
   renderCharts(region);
   renderRiverBars();
   renderSparkEvidence();
@@ -547,7 +637,7 @@ function render() {
     "건",
     0,
   )} · 범람구역 ${formatNumber(DATA.flood.totalZones, "개", 0)}`;
-  el.tableCaption.textContent = "CSV 점수에 기상청 실황 보정값을 더한 표시 점수 내림차순";
+  el.tableCaption.textContent = "risk_latest 점수에 기상청 실황 보정값을 더한 현재 표시 점수 내림차순";
 }
 
 el.regionSelect.addEventListener("change", (event) => {

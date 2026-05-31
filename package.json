@@ -2,6 +2,9 @@
   "name": "gyeongnam-flood-dashboard",
   "private": true,
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "batch": "python -m backend.spark.jobs.calculate_risk_batch --engine auto",
+    "api": "python -m backend.app.api.risk_api",
+    "test": "python -m unittest discover -s tests"
   }
 }

@@ -10,6 +10,8 @@ on:
     paths:
       - "scripts/fetch_kma_weather.py"
       - "scripts/build_spark_summary.py"
+      - "backend/**"
+      - "data/sample/**"
       - "dashboard-data.js"
       - ".github/workflows/refresh-live-data.yml"
 
@@ -34,6 +36,9 @@ jobs:
           KMA_SERVICE_KEY: ${{ secrets.KMA_SERVICE_KEY }}
         run: python scripts/fetch_kma_weather.py
 
+      - name: Run Spark RDD risk batch
+        run: python -m backend.spark.jobs.calculate_risk_batch --engine spark --input data/sample --output data/processed --batch-id actions-${{ github.run_id }}
+
       - name: Build PySpark RDD evidence
         run: python scripts/build_spark_summary.py
 
@@ -41,7 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add live-weather.js spark-evidence.js
+          git add live-weather.js spark-evidence.js risk-latest.js risk-history.js risk-feature.js data/processed
           if git diff --cached --quiet; then
             echo "No generated data changes"
             exit 0

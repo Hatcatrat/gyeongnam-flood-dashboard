@@ -72,7 +72,7 @@
         <article class="tile-panel" aria-label="위험 지역 타일맵">
           <div class="panel-head">
             <div>
-              <h2>지역별 위험점수</h2>
+              <h2>현재 위험 지도</h2>
               <p id="tileCaption">-</p>
             </div>
             <div class="legend" aria-label="위험도 범례">
@@ -121,6 +121,12 @@
               <div><span>30mm 이상 시간</span><strong id="heavyHours">-</strong></div>
             </div>
           </article>
+
+          <article class="panel compact-panel">
+            <h2>위험 원인 분해</h2>
+            <div id="featureBars" class="feature-bars"></div>
+            <p id="featureCaption" class="note">risk_feature 저장값을 읽어 표시합니다.</p>
+          </article>
         </aside>
       </section>
 
@@ -143,6 +149,16 @@
             </div>
           </div>
           <canvas id="dailyChart" height="280" aria-label="날짜별 강수량 막대 그래프"></canvas>
+        </article>
+
+        <article class="panel chart-panel compact-chart">
+          <div class="panel-head">
+            <div>
+              <h2>최근 위험 점수 변화</h2>
+              <p id="historyCaption">risk_history 기반</p>
+            </div>
+          </div>
+          <canvas id="riskHistoryChart" height="260" aria-label="시간대별 위험 점수 변화 그래프"></canvas>
         </article>
 
         <article class="panel chart-panel compact-chart">
@@ -241,6 +257,9 @@
     <script src="dashboard-data.js"></script>
     <script src="live-weather.js"></script>
     <script src="spark-evidence.js"></script>
+    <script src="risk-latest.js"></script>
+    <script src="risk-history.js"></script>
+    <script src="risk-feature.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

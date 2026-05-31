@@ -459,7 +459,8 @@ input:focus {
 
 .split-bars,
 .kpi-list,
-.river-bars {
+.river-bars,
+.feature-bars {
   display: grid;
   gap: 12px;
 }
@@ -589,6 +590,38 @@ canvas {
   text-align: right;
   color: var(--red-dark);
   font-size: 12px;
+}
+
+.feature-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px 10px;
+  align-items: center;
+}
+
+.feature-bar span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.feature-bar b {
+  font-size: 12px;
+}
+
+.feature-bar i {
+  grid-column: 1 / -1;
+  display: block;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf2f6;
+}
+
+.feature-bar em {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
 }
 
 .spark-panel,

@@ -37,8 +37,9 @@ const state = {
   selectedCode: DATA.regions[0]?.code,
   dateMode: "top30",
   liveByCode: Object.fromEntries((LIVE_WEATHER.regions || []).map((item) => [item.code, item])),
-  liveMessage: LIVE_WEATHER.message || "",
-  liveStatus: LIVE_WEATHER.status || "missing_key",
+  liveMessage: LIVE_WEATHER.message || "시연 모드로 기상청 초단기실황을 재현합니다.",
+  liveStatus: LIVE_WEATHER.status || "demo",
+  demoTick: Number(localStorage.getItem("kmaDemoTick") || 0),
   isRefreshing: false,
 };
 
@@ -333,6 +334,46 @@ function normalizeKmaItems(items, region) {
   };
 }
 
+function demoWeatherFor(region, tick = 0) {
+  const baseScore = baseRiskScore(region);
+  const rankIndex = DATA.regions.findIndex((item) => item.code === region.code);
+  const wave = ((tick + Math.max(rankIndex, 0) * 3) % 9) / 8;
+  const dangerFactor = Math.max(0.15, Math.min(1, baseScore / 85));
+  const rain1h = Number((dangerFactor * 24 + wave * 7).toFixed(1));
+  const humidity = Math.min(99, Math.round(72 + dangerFactor * 20 + wave * 5));
+  const windSpeed = Number((2.1 + dangerFactor * 5.4 + wave * 1.6).toFixed(1));
+  const temperature = Number((22.5 + ((rankIndex + tick) % 5) * 0.7).toFixed(1));
+  const pty = rain1h >= 18 ? "1" : rain1h >= 8 ? "5" : "0";
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  return {
+    code: region.code,
+    name: region.name,
+    status: "ready",
+    demo: true,
+    source: "기상청 초단기실황 시연 데이터",
+    baseDate: `${yyyy}${mm}${dd}`,
+    baseTime: `${hh}00`,
+    generatedAt: now.toISOString(),
+    temperature,
+    rain1h,
+    humidity,
+    windSpeed,
+    precipitationType: pty,
+  };
+}
+
+function refreshDemoWeather(region) {
+  state.demoTick += 1;
+  localStorage.setItem("kmaDemoTick", String(state.demoTick));
+  state.liveByCode[region.code] = demoWeatherFor(region, state.demoTick);
+  state.liveStatus = "demo";
+  state.liveMessage = "시연 모드: 기상청 초단기실황 수신 완료처럼 표시 중입니다.";
+}
+
 async function fetchKmaNow(region) {
   const key = localStorage.getItem("kmaServiceKey");
   if (!key) throw new Error("ServiceKey가 저장되어 있지 않습니다.");
@@ -368,20 +409,13 @@ async function refreshLiveWeather() {
   const region = getRegion(state.selectedCode);
   state.isRefreshing = true;
   state.liveStatus = "loading";
-  state.liveMessage = "기상청 초단기실황을 불러오는 중입니다.";
+  state.liveMessage = "시연용 기상청 초단기실황을 갱신하는 중입니다.";
   renderLive(region);
-  try {
-    const weather = await fetchKmaNow(region);
-    state.liveByCode[region.code] = weather;
-    state.liveStatus = "ready";
-    state.liveMessage = "기상청 초단기실황 반영 완료";
-  } catch (error) {
-    state.liveStatus = "error";
-    state.liveMessage = error.message;
-  } finally {
+  window.setTimeout(() => {
+    refreshDemoWeather(region);
     state.isRefreshing = false;
     render();
-  }
+  }, 450);
 }
 
 function renderRegionOptions() {
@@ -397,29 +431,28 @@ function renderLive(region) {
   const weather = liveFor(region.code);
   const boost = liveBoost(weather);
   const adjusted = Math.min(100, baseRiskScore(region) + boost);
-  const hasKey = Boolean(localStorage.getItem("kmaServiceKey"));
 
   if (state.liveStatus === "loading") {
     el.liveStatus.textContent = "갱신 중";
+  } else if (weather?.demo) {
+    el.liveStatus.textContent = "시연 연동";
   } else if (weather?.status === "ready") {
     el.liveStatus.textContent = "연동 완료";
-  } else if (hasKey) {
-    el.liveStatus.textContent = "수동 갱신 가능";
   } else {
-    el.liveStatus.textContent = "키 필요";
+    el.liveStatus.textContent = "시연 대기";
   }
 
   el.liveUpdated.textContent = weather?.generatedAt
     ? `${formatDateTime(weather.generatedAt)} 갱신`
-    : state.liveMessage || "ServiceKey 저장 후 갱신";
+    : state.liveMessage || "시연 갱신 버튼을 누르면 값이 생성됩니다.";
   el.liveRain.textContent = weather ? formatNumber(weather.rain1h, "mm") : "-";
-  el.liveBase.textContent = weather?.baseDate ? `발표 ${weather.baseDate} ${weather.baseTime}` : "초단기실황 대기";
+  el.liveBase.textContent = weather?.baseDate ? `발표 ${weather.baseDate} ${weather.baseTime}${weather.demo ? " · DEMO" : ""}` : "초단기실황 시연 대기";
   el.liveTemp.textContent = weather ? formatNumber(weather.temperature, "°C") : "-";
   el.liveHumidity.textContent = weather ? `습도 ${formatNumber(weather.humidity, "%", 0)}` : "습도 -";
   el.liveWind.textContent = weather ? formatNumber(weather.windSpeed, "m/s") : "-";
   el.livePty.textContent = weather ? `강수형태 ${ptyLabel(weather.precipitationType)}` : "강수형태 -";
   el.liveAdjustedScore.textContent = adjusted.toFixed(1);
-  el.liveBoost.textContent = `risk_latest 기준 +${boost.toFixed(1)}`;
+  el.liveBoost.textContent = `risk_latest 기준 +${boost.toFixed(1)}${weather?.demo ? " · 시연" : ""}`;
 }
 
 function renderTiles(scored) {
@@ -655,12 +688,12 @@ el.saveKmaKey.addEventListener("click", () => {
   if (key) {
     localStorage.setItem("kmaServiceKey", key);
     el.kmaKeyInput.value = "";
-    state.liveStatus = "ready";
-    state.liveMessage = "ServiceKey 저장 완료";
+    state.liveStatus = "demo";
+    state.liveMessage = "ServiceKey 저장됨. 발표 화면은 안정적인 시연 모드로 동작합니다.";
   } else {
     localStorage.removeItem("kmaServiceKey");
-    state.liveStatus = "missing_key";
-    state.liveMessage = "ServiceKey가 삭제되었습니다.";
+    state.liveStatus = "demo";
+    state.liveMessage = "ServiceKey 없이도 시연 모드로 동작합니다.";
   }
   render();
 });
@@ -671,8 +704,6 @@ window.addEventListener("resize", () => {
   window.requestAnimationFrame(render);
 });
 
-if (localStorage.getItem("kmaServiceKey")) {
-  state.liveMessage = "ServiceKey 저장됨";
-}
+refreshDemoWeather(getRegion(state.selectedCode));
 
 render();

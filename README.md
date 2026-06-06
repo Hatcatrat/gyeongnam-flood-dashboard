@@ -7,7 +7,7 @@
 - `risk_latest`, `risk_history`, `risk_feature` 저장 구조 기반 대시보드
 - Spark RDD 핵심 연산(`map`, `filter`, `join`, `reduceByKey`, `mapValues`) 기반 위험 점수 계산
 - 행정동코드 기준 현재 위험 지도, 위험 순위, 시간대별 변화, 원인 분해 표시
-- 기상청 초단기실황조회 연동 준비 및 브라우저 ServiceKey 수동 갱신 지원
+- 기상청 초단기실황조회 시연 모드 지원: ServiceKey 오류와 무관하게 발표용 실황값 생성
 - API 키 없이도 실행 가능한 sample 데이터와 mock 배치 파이프라인 제공
 - Structured Streaming `foreachBatch` 확장 포인트 제공
 
@@ -75,9 +75,13 @@ npm run api
 - `GET /api/risk/ranking`
 - `GET /api/risk/features/{grid_id}`
 
-## 기상청 연동
+## 기상청 연동 시연 모드
 
-GitHub Pages는 서버가 없어 API 키를 숨길 수 없습니다. 공개 링크에서 실시간 값을 갱신하려면 브라우저의 `기상청 ServiceKey` 입력칸에 키를 저장하고 `실시간 갱신`을 누릅니다.
+GitHub Pages는 서버가 없어 API 키를 숨길 수 없습니다. 또한 공공데이터포털 ServiceKey 인코딩, 승인 상태, 호출 제한 때문에 발표 중 오류가 날 수 있습니다.
+
+현재 대시보드는 발표 안정성을 위해 기본적으로 **시연 모드**로 동작합니다. `시연 갱신`을 누르면 선택 지역의 `risk_latest` 점수와 지역 순위를 반영한 기상청 초단기실황 형태의 강수량, 기온, 습도, 풍속 값이 생성되고 위험점수에 즉시 반영됩니다.
+
+ServiceKey 입력칸은 선택 사항입니다. 값을 넣어도 화면은 안정적인 시연 모드로 갱신됩니다.
 
 자동 갱신은 GitHub Actions Secret에 `KMA_SERVICE_KEY`를 추가하면 동작합니다.
 

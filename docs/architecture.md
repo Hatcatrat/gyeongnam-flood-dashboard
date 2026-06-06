@@ -1,14 +1,14 @@
 # Architecture
 
-## 발표 핵심 메시지
+## 핵심 메시지
 
-기존 프로젝트를 2024/2025 데이터 기반 일회성 RDD 분석에서, 실시간·준실시간 데이터를 주기적으로 수집하고 Spark RDD로 지역별 홍수 범람 위험 점수를 지속 계산해 웹 대시보드에 반영하는 빅데이터 위험 모니터링 시스템으로 발전시켰다.
+기존 프로젝트를 2024/2025 데이터 기반 RDD 분석에서, 지역별 홍수 범람 위험 점수를 계산하고 웹 대시보드에 반영하는 빅데이터 위험 모니터링 시스템으로 발전시켰다.
 
 ## 전체 흐름
 
 ```text
 기상·강우·수위·침수 이력·지형 데이터
-  -> 수집기 또는 sample 파일
+  -> 입력 데이터
   -> Spark Batch Job
   -> RDD 위험 점수 엔진
   -> risk_latest / risk_history / risk_feature
@@ -21,7 +21,7 @@
 
 ## Batch 우선, Streaming 확장
 
-1차 목표는 안정적인 자동 갱신 배치다. `backend/spark/jobs/calculate_risk_batch.py`는 sample 또는 실제 적재 파일을 읽고 RDD 엔진을 실행해 결과 저장소를 갱신한다.
+1차 목표는 안정적인 자동 갱신 배치다. `backend/spark/jobs/calculate_risk_batch.py`는 입력 파일을 읽고 RDD 엔진을 실행해 결과 저장소를 갱신한다.
 
 Streaming 확장은 `backend/spark/streaming/risk_streaming_job.py`에 분리했다. Structured Streaming의 `foreachBatch`에서 micro-batch DataFrame을 `.rdd`로 변환한 뒤 같은 RDD 엔진을 재사용한다.
 

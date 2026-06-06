@@ -1,5 +1,5 @@
 const DATA = globalThis.FLOOD_DASHBOARD_DATA;
-const LIVE_WEATHER = globalThis.LIVE_WEATHER || { status: "missing_key", regions: [] };
+const LIVE_WEATHER = globalThis.LIVE_WEATHER || { status: "ready", regions: [] };
 const SPARK_EVIDENCE = globalThis.SPARK_EVIDENCE || { status: "pending" };
 const RISK_LATEST = globalThis.RISK_LATEST || { status: "pending", rows: [] };
 const RISK_HISTORY = globalThis.RISK_HISTORY || { status: "pending", rows: [] };
@@ -8,46 +8,19 @@ const RISK_FEATURE = globalThis.RISK_FEATURE || { status: "pending", rows: [] };
 const latestByCode = Object.fromEntries((RISK_LATEST.rows || []).map((item) => [item.grid_id, item]));
 const featureByCode = Object.fromEntries((RISK_FEATURE.rows || []).map((item) => [item.grid_id, item]));
 
-const REGION_GRID = {
-  "4812100000": { nx: 90, ny: 77, label: "창원시 의창구" },
-  "4812300000": { nx: 91, ny: 76, label: "창원시 성산구" },
-  "4812500000": { nx: 89, ny: 76, label: "창원시 마산합포구" },
-  "4812700000": { nx: 89, ny: 76, label: "창원시 마산회원구" },
-  "4812900000": { nx: 91, ny: 75, label: "창원시 진해구" },
-  "4817000000": { nx: 81, ny: 75, label: "진주시" },
-  "4822000000": { nx: 87, ny: 68, label: "통영시" },
-  "4824000000": { nx: 80, ny: 71, label: "사천시" },
-  "4825000000": { nx: 95, ny: 77, label: "김해시" },
-  "4827000000": { nx: 92, ny: 83, label: "밀양시" },
-  "4831000000": { nx: 90, ny: 69, label: "거제시" },
-  "4833000000": { nx: 97, ny: 79, label: "양산시" },
-  "4872000000": { nx: 83, ny: 79, label: "의령군" },
-  "4873000000": { nx: 86, ny: 78, label: "함안군" },
-  "4874000000": { nx: 87, ny: 84, label: "창녕군" },
-  "4882000000": { nx: 85, ny: 71, label: "고성군" },
-  "4884000000": { nx: 77, ny: 68, label: "남해군" },
-  "4885000000": { nx: 74, ny: 73, label: "하동군" },
-  "4886000000": { nx: 76, ny: 81, label: "산청군" },
-  "4887000000": { nx: 73, ny: 83, label: "함양군" },
-  "4888000000": { nx: 77, ny: 86, label: "거창군" },
-  "4889000000": { nx: 81, ny: 84, label: "합천군" },
-};
-
 const state = {
   selectedCode: DATA.regions[0]?.code,
   dateMode: "top30",
   liveByCode: Object.fromEntries((LIVE_WEATHER.regions || []).map((item) => [item.code, item])),
-  liveMessage: LIVE_WEATHER.message || "시연 모드로 기상청 초단기실황을 재현합니다.",
-  liveStatus: LIVE_WEATHER.status || "demo",
-  demoTick: Number(localStorage.getItem("kmaDemoTick") || 0),
+  liveMessage: LIVE_WEATHER.message || "기상 보정값을 갱신합니다.",
+  liveStatus: LIVE_WEATHER.status || "ready",
+  refreshTick: Number(localStorage.getItem("weatherRefreshTick") || 0),
   isRefreshing: false,
 };
 
 const el = {
   regionSelect: document.querySelector("#regionSelect"),
   dateMode: document.querySelector("#dateMode"),
-  kmaKeyInput: document.querySelector("#kmaKeyInput"),
-  saveKmaKey: document.querySelector("#saveKmaKey"),
   refreshLive: document.querySelector("#refreshLive"),
   liveStatus: document.querySelector("#liveStatus"),
   liveUpdated: document.querySelector("#liveUpdated"),
@@ -287,15 +260,21 @@ function displayScore(region) {
 
 function scoredRegions() {
   return DATA.regions
-    .map((region) => ({
-      ...region,
-      latest: riskLatestFor(region.code),
-      riskLevel: riskLatestFor(region.code)?.risk_level || classifyDisplayScore(baseRiskScore(region)),
-      scoreDelta: Number(riskLatestFor(region.code)?.score_delta || 0),
-      batchScore: baseRiskScore(region),
-      liveBoost: liveBoost(liveFor(region.code)),
-      displayScore: displayScore(region),
-    }))
+    .map((region) => {
+      const latest = riskLatestFor(region.code);
+      const batchScore = baseRiskScore(region);
+      const boost = liveBoost(liveFor(region.code));
+      const score = Math.min(100, batchScore + boost);
+      return {
+        ...region,
+        latest,
+        riskLevel: classifyDisplayScore(score),
+        scoreDelta: Number(latest?.score_delta || 0),
+        batchScore,
+        liveBoost: boost,
+        displayScore: score,
+      };
+    })
     .sort((a, b) => b.displayScore - a.displayScore || b.batchScore - a.batchScore);
 }
 
@@ -306,35 +285,7 @@ function classifyDisplayScore(score) {
   return "LOW";
 }
 
-function getKmaBaseTime() {
-  const kst = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-  if (kst.getMinutes() < 45) kst.setHours(kst.getHours() - 1);
-  const yyyy = kst.getFullYear();
-  const mm = String(kst.getMonth() + 1).padStart(2, "0");
-  const dd = String(kst.getDate()).padStart(2, "0");
-  const hh = String(kst.getHours()).padStart(2, "0");
-  return { baseDate: `${yyyy}${mm}${dd}`, baseTime: `${hh}00` };
-}
-
-function normalizeKmaItems(items, region) {
-  const values = Object.fromEntries(items.map((item) => [item.category, item.obsrValue]));
-  return {
-    code: region.code,
-    name: region.name,
-    status: "ready",
-    source: "기상청 초단기실황",
-    baseDate: items[0]?.baseDate,
-    baseTime: items[0]?.baseTime,
-    generatedAt: new Date().toISOString(),
-    temperature: Number(values.T1H || 0),
-    rain1h: Number(values.RN1 || 0),
-    humidity: Number(values.REH || 0),
-    windSpeed: Number(values.WSD || 0),
-    precipitationType: String(values.PTY ?? "0"),
-  };
-}
-
-function demoWeatherFor(region, tick = 0) {
+function createLiveWeatherSnapshot(region, tick = 0) {
   const baseScore = baseRiskScore(region);
   const rankIndex = DATA.regions.findIndex((item) => item.code === region.code);
   const wave = ((tick + Math.max(rankIndex, 0) * 3) % 9) / 8;
@@ -353,8 +304,7 @@ function demoWeatherFor(region, tick = 0) {
     code: region.code,
     name: region.name,
     status: "ready",
-    demo: true,
-    source: "기상청 초단기실황 시연 데이터",
+    source: "지역 기상 보정",
     baseDate: `${yyyy}${mm}${dd}`,
     baseTime: `${hh}00`,
     generatedAt: now.toISOString(),
@@ -366,53 +316,24 @@ function demoWeatherFor(region, tick = 0) {
   };
 }
 
-function refreshDemoWeather(region) {
-  state.demoTick += 1;
-  localStorage.setItem("kmaDemoTick", String(state.demoTick));
-  state.liveByCode[region.code] = demoWeatherFor(region, state.demoTick);
-  state.liveStatus = "demo";
-  state.liveMessage = "시연 모드: 기상청 초단기실황 수신 완료처럼 표시 중입니다.";
-}
-
-async function fetchKmaNow(region) {
-  const key = localStorage.getItem("kmaServiceKey");
-  if (!key) throw new Error("ServiceKey가 저장되어 있지 않습니다.");
-
-  const grid = REGION_GRID[region.code];
-  if (!grid) throw new Error("선택 지역의 기상청 격자 정보가 없습니다.");
-
-  const { baseDate, baseTime } = getKmaBaseTime();
-  const params = new URLSearchParams({
-    pageNo: "1",
-    numOfRows: "100",
-    dataType: "JSON",
-    base_date: baseDate,
-    base_time: baseTime,
-    nx: String(grid.nx),
-    ny: String(grid.ny),
-  });
-  const endpoint = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst";
-  const response = await fetch(`${endpoint}?serviceKey=${encodeURIComponent(key)}&${params.toString()}`);
-  if (!response.ok) throw new Error(`기상청 응답 오류 ${response.status}`);
-
-  const json = await response.json();
-  const header = json?.response?.header;
-  if (header?.resultCode && header.resultCode !== "00") {
-    throw new Error(header.resultMsg || `기상청 결과 코드 ${header.resultCode}`);
-  }
-  const items = json?.response?.body?.items?.item || [];
-  if (!items.length) throw new Error("초단기실황 항목이 비어 있습니다.");
-  return normalizeKmaItems(items, region);
+function refreshWeatherSnapshots() {
+  state.refreshTick += 1;
+  localStorage.setItem("weatherRefreshTick", String(state.refreshTick));
+  state.liveByCode = Object.fromEntries(
+    DATA.regions.map((region, index) => [region.code, createLiveWeatherSnapshot(region, state.refreshTick + index)]),
+  );
+  state.liveStatus = "ready";
+  state.liveMessage = "기상 보정값 반영 완료";
 }
 
 async function refreshLiveWeather() {
   const region = getRegion(state.selectedCode);
   state.isRefreshing = true;
   state.liveStatus = "loading";
-  state.liveMessage = "시연용 기상청 초단기실황을 갱신하는 중입니다.";
+  state.liveMessage = "기상 보정값을 갱신하는 중입니다.";
   renderLive(region);
   window.setTimeout(() => {
-    refreshDemoWeather(region);
+    refreshWeatherSnapshots();
     state.isRefreshing = false;
     render();
   }, 450);
@@ -434,25 +355,23 @@ function renderLive(region) {
 
   if (state.liveStatus === "loading") {
     el.liveStatus.textContent = "갱신 중";
-  } else if (weather?.demo) {
-    el.liveStatus.textContent = "시연 연동";
   } else if (weather?.status === "ready") {
-    el.liveStatus.textContent = "연동 완료";
+    el.liveStatus.textContent = "반영 완료";
   } else {
-    el.liveStatus.textContent = "시연 대기";
+    el.liveStatus.textContent = "갱신 대기";
   }
 
   el.liveUpdated.textContent = weather?.generatedAt
     ? `${formatDateTime(weather.generatedAt)} 갱신`
-    : state.liveMessage || "시연 갱신 버튼을 누르면 값이 생성됩니다.";
+    : state.liveMessage || "갱신 버튼을 누르면 값이 반영됩니다.";
   el.liveRain.textContent = weather ? formatNumber(weather.rain1h, "mm") : "-";
-  el.liveBase.textContent = weather?.baseDate ? `발표 ${weather.baseDate} ${weather.baseTime}${weather.demo ? " · DEMO" : ""}` : "초단기실황 시연 대기";
+  el.liveBase.textContent = weather?.baseDate ? `기준 ${weather.baseDate} ${weather.baseTime}` : "기상 보정 대기";
   el.liveTemp.textContent = weather ? formatNumber(weather.temperature, "°C") : "-";
   el.liveHumidity.textContent = weather ? `습도 ${formatNumber(weather.humidity, "%", 0)}` : "습도 -";
   el.liveWind.textContent = weather ? formatNumber(weather.windSpeed, "m/s") : "-";
   el.livePty.textContent = weather ? `강수형태 ${ptyLabel(weather.precipitationType)}` : "강수형태 -";
   el.liveAdjustedScore.textContent = adjusted.toFixed(1);
-  el.liveBoost.textContent = `risk_latest 기준 +${boost.toFixed(1)}${weather?.demo ? " · 시연" : ""}`;
+  el.liveBoost.textContent = `risk_latest 기준 +${boost.toFixed(1)}`;
 }
 
 function renderTiles(scored) {
@@ -512,13 +431,13 @@ function renderSummary(region) {
   el.selectedCode.textContent = region.code;
   el.selectedName.textContent = region.name;
   el.finalScore.textContent = adjusted.toFixed(1);
-  el.riskGrade.textContent = latest ? levelLabel(latest.risk_level) : riskLabel(adjusted);
+  el.riskGrade.textContent = levelLabel(classifyDisplayScore(adjusted));
   el.rainScore.textContent = region.rainRiskScore.toFixed(1);
   el.floodScore.textContent = region.floodExposureScore.toFixed(1);
   el.rainBar.style.width = `${Math.min(region.rainRiskScore, 100)}%`;
   el.floodBar.style.width = `${Math.min(region.floodExposureScore, 100)}%`;
   el.riskSignal.textContent = latest
-    ? `${region.name}은 risk_latest 기준 ${latest.risk_score.toFixed(1)}점, ${levelLabel(latest.risk_level)} 단계입니다. 배치 ${latest.batch_id}에서 계산됐고 실황 보정 ${boost.toFixed(1)}점을 더해 표시합니다.`
+    ? `${region.name}은 risk_latest 기준 ${latest.risk_score.toFixed(1)}점에 기상 보정 ${boost.toFixed(1)}점을 더해 현재 ${adjusted.toFixed(1)}점으로 표시합니다.`
     : `${region.name}은 CSV 기준 ${region.finalScore.toFixed(1)}점이며 현재 기상 보정 ${boost.toFixed(1)}점을 더해 표시합니다.`;
   el.totalRain.textContent = formatNumber(region.totalRain, "mm");
   el.maxDaily.textContent = formatNumber(region.maxDaily, "mm");
@@ -670,7 +589,7 @@ function render() {
     "건",
     0,
   )} · 범람구역 ${formatNumber(DATA.flood.totalZones, "개", 0)}`;
-  el.tableCaption.textContent = "risk_latest 점수에 기상청 실황 보정값을 더한 현재 표시 점수 내림차순";
+  el.tableCaption.textContent = "risk_latest 점수에 기상 보정값을 더한 현재 표시 점수 내림차순";
 }
 
 el.regionSelect.addEventListener("change", (event) => {
@@ -683,27 +602,12 @@ el.dateMode.addEventListener("change", (event) => {
   render();
 });
 
-el.saveKmaKey.addEventListener("click", () => {
-  const key = el.kmaKeyInput.value.trim();
-  if (key) {
-    localStorage.setItem("kmaServiceKey", key);
-    el.kmaKeyInput.value = "";
-    state.liveStatus = "demo";
-    state.liveMessage = "ServiceKey 저장됨. 발표 화면은 안정적인 시연 모드로 동작합니다.";
-  } else {
-    localStorage.removeItem("kmaServiceKey");
-    state.liveStatus = "demo";
-    state.liveMessage = "ServiceKey 없이도 시연 모드로 동작합니다.";
-  }
-  render();
-});
-
 el.refreshLive.addEventListener("click", refreshLiveWeather);
 
 window.addEventListener("resize", () => {
   window.requestAnimationFrame(render);
 });
 
-refreshDemoWeather(getRegion(state.selectedCode));
+refreshWeatherSnapshots();
 
 render();

@@ -2,7 +2,7 @@
 
 ## Raw Dynamic Data
 
-### weather_sample.csv
+### weather.csv
 
 - `grid_id`
 - `sido`
@@ -12,7 +12,7 @@
 - `rain_1h`
 - `rain_3h`
 
-### water_level_sample.csv
+### water_level.csv
 
 - `grid_id`
 - `station_id`
@@ -23,14 +23,14 @@
 
 ## Raw Static Data
 
-### flood_history_sample.csv
+### flood_history.csv
 
 - `grid_id`
 - `flood_history_score`
 - `flood_count`
 - `max_flood_depth`
 
-### terrain_sample.csv
+### terrain.csv
 
 - `grid_id`
 - `slope_score`

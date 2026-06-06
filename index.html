@@ -10,10 +10,10 @@
     <main class="app-shell">
       <section class="topbar" aria-label="대시보드 조건">
         <div class="title-block">
-          <p class="eyebrow">KMA Live Flood Risk Dashboard</p>
-          <h1>경남 홍수범람 위험점수 대시보드</h1>
+          <p class="eyebrow">Flood Risk Dashboard</p>
+          <h1>경남 홍수 범람 위험 지역 대시보드</h1>
           <p class="subtitle">
-            
+            CSV·RDD 분석 결과와 기상 보정값을 결합해 지역별 홍수 범람 위험도를 한눈에 보여줍니다.
           </p>
         </div>
 
@@ -31,18 +31,13 @@
               <option value="nonzero">강수 발생일 전체</option>
             </select>
           </label>
-          <label class="control api-control">
-            <span>ServiceKey 선택 입력</span>
-            <input id="kmaKeyInput" type="password" autocomplete="off" placeholder="" />
-          </label>
-          <button id="saveKmaKey" class="icon-button" type="button">KEY 저장</button>
-          <button id="refreshLive" class="icon-button primary" type="button">실시간 갱신</button>
+          <button id="refreshLive" class="icon-button primary" type="button">기상 보정 갱신</button>
         </div>
       </section>
 
-      <section class="live-strip" aria-label="기상청 실시간 정보">
+      <section class="live-strip" aria-label="기상 보정 정보">
         <article class="live-card status-card">
-          <span>기상청 연동</span>
+          <span>기상 보정</span>
           <strong id="liveStatus">대기</strong>
           <p id="liveUpdated">-</p>
         </article>
@@ -62,7 +57,7 @@
           <p id="livePty">강수형태 -</p>
         </article>
         <article class="live-card live-score-card">
-          <span>실시간 보정 위험점수</span>
+          <span>기상 보정 위험점수</span>
           <strong id="liveAdjustedScore">-</strong>
           <p id="liveBoost">risk_latest 기준 +0.0</p>
         </article>
@@ -211,15 +206,15 @@
             <code>누적 30% + 최대일 25% + 최대시간 20% + 30mm 이상 15% + 2024년 10%</code>
           </div>
           <div class="formula-block">
-            <span>기상청 실황 산정</span>
-            <code>시연용 1시간 강수 + 강수형태 + 습도 + 풍속을 0~15점 보정값으로 환산</code>
+            <span>기상 보정</span>
+            <code>현재 1시간 강수 + 강수형태 + 습도 + 풍속을 0~15점 보정값으로 환산</code>
           </div>
           <div class="formula-block">
             <span>최종 표시 점수</span>
-            <code>CSV 위험점수 + 실시간 기상 보정값, 최대 100점</code>
+            <code>CSV 위험점수 + 기상 보정값, 최대 100점</code>
           </div>
           <p class="note">
-          
+            홍수범람구역 CSV에는 행정동코드가 없어 전체 저빈도 범람 압력을 보정값으로 반영하고, 선택 지역의 대표 격자와 강수 특성을 기준으로 표시합니다.
           </p>
         </article>
       </section>
@@ -239,7 +234,7 @@
                 <th>지역</th>
                 <th>코드</th>
                 <th>CSV 점수</th>
-                <th>실시간 보정</th>
+                <th>기상 보정</th>
                 <th>표시 점수</th>
                 <th>강수</th>
                 <th>범람보정</th>

@@ -13,7 +13,7 @@
           <p class="eyebrow">KMA Live Flood Risk Dashboard</p>
           <h1>경남 홍수 범람 위험 지역 대시보드</h1>
           <p class="subtitle">
-            CSV 기반 위험점수에 기상청 초단기실황 시연 데이터를 더해 선택 지역의 현재 위험도를 실시간처럼 보여줍니다.
+            
           </p>
         </div>
 
@@ -33,16 +33,16 @@
           </label>
           <label class="control api-control">
             <span>ServiceKey 선택 입력</span>
-            <input id="kmaKeyInput" type="password" autocomplete="off" placeholder="시연 모드는 비워도 됨" />
+            <input id="kmaKeyInput" type="password" autocomplete="off" placeholder="" />
           </label>
-          <button id="saveKmaKey" class="icon-button" type="button">시연 저장</button>
-          <button id="refreshLive" class="icon-button primary" type="button">시연 갱신</button>
+          <button id="saveKmaKey" class="icon-button" type="button">KEY 저장</button>
+          <button id="refreshLive" class="icon-button primary" type="button">실시간 갱신</button>
         </div>
       </section>
 
-      <section class="live-strip" aria-label="기상청 실시간 시연 정보">
+      <section class="live-strip" aria-label="기상청 실시간 정보">
         <article class="live-card status-card">
-          <span>기상청 연동 시연</span>
+          <span>기상청 연동</span>
           <strong id="liveStatus">대기</strong>
           <p id="liveUpdated">-</p>
         </article>
@@ -211,7 +211,7 @@
             <code>누적 30% + 최대일 25% + 최대시간 20% + 30mm 이상 15% + 2024년 10%</code>
           </div>
           <div class="formula-block">
-            <span>기상청 실황 시연 보정</span>
+            <span>기상청 실황 산정</span>
             <code>시연용 1시간 강수 + 강수형태 + 습도 + 풍속을 0~15점 보정값으로 환산</code>
           </div>
           <div class="formula-block">
@@ -219,7 +219,7 @@
             <code>CSV 위험점수 + 실시간 기상 보정값, 최대 100점</code>
           </div>
           <p class="note">
-            홍수범람구역 CSV에는 행정동코드가 없어 전체 저빈도 범람 압력을 보정값으로 반영하고, 발표용 실황 정보는 선택 지역의 대표 기상청 격자 기준 시연값으로 표시합니다.
+          
           </p>
         </article>
       </section>

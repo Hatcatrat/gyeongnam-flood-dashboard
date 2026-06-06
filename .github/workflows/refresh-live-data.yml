@@ -1,4 +1,4 @@
-name: Refresh live weather and Spark evidence
+name: Refresh dashboard data and Spark evidence
 
 on:
   workflow_dispatch:
@@ -8,11 +8,16 @@ on:
     branches:
       - main
     paths:
-      - "scripts/fetch_kma_weather.py"
       - "scripts/build_spark_summary.py"
       - "backend/**"
       - "data/sample/**"
+      - "index.html"
+      - "styles.css"
+      - "app.js"
       - "dashboard-data.js"
+      - "live-weather.js"
+      - "README.md"
+      - "docs/**"
       - ".github/workflows/refresh-live-data.yml"
 
 permissions:
@@ -31,11 +36,6 @@ jobs:
       - name: Install PySpark
         run: python -m pip install pyspark==3.5.3
 
-      - name: Refresh KMA live weather
-        env:
-          KMA_SERVICE_KEY: ${{ secrets.KMA_SERVICE_KEY }}
-        run: python scripts/fetch_kma_weather.py
-
       - name: Run Spark RDD risk batch
         run: python -m backend.spark.jobs.calculate_risk_batch --engine spark --input data/sample --output data/processed --batch-id actions-${{ github.run_id }}
 
@@ -46,11 +46,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add live-weather.js spark-evidence.js risk-latest.js risk-history.js risk-feature.js data/processed
+          git add spark-evidence.js risk-latest.js risk-history.js risk-feature.js data/processed
           if git diff --cached --quiet; then
             echo "No generated data changes"
-            exit 0
+          else
+            git commit -m "Refresh dashboard data and Spark evidence"
+            git push origin HEAD:main
           fi
-          git commit -m "Refresh live weather and Spark evidence"
-          git push origin HEAD:main
           git push origin HEAD:gh-pages

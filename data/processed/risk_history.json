@@ -1,225 +1,5 @@
 [
   {
-    "id": "actions-28056605086:4812700000",
-    "grid_id": 4812700000,
-    "sido": "경상남도",
-    "sigungu": "창원시 마산회원구",
-    "risk_score": 28.18,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4889000000",
-    "grid_id": 4889000000,
-    "sido": "경상남도",
-    "sigungu": "합천군",
-    "risk_score": 24.94,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4873000000",
-    "grid_id": 4873000000,
-    "sido": "경상남도",
-    "sigungu": "함안군",
-    "risk_score": 22.61,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4886000000",
-    "grid_id": 4886000000,
-    "sido": "경상남도",
-    "sigungu": "산청군",
-    "risk_score": 20.83,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4887000000",
-    "grid_id": 4887000000,
-    "sido": "경상남도",
-    "sigungu": "함양군",
-    "risk_score": 17.93,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4812900000",
-    "grid_id": 4812900000,
-    "sido": "경상남도",
-    "sigungu": "창원시 진해구",
-    "risk_score": 17.29,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4825000000",
-    "grid_id": 4825000000,
-    "sido": "경상남도",
-    "sigungu": "김해시",
-    "risk_score": 15.01,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4888000000",
-    "grid_id": 4888000000,
-    "sido": "경상남도",
-    "sigungu": "거창군",
-    "risk_score": 13.24,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4874000000",
-    "grid_id": 4874000000,
-    "sido": "경상남도",
-    "sigungu": "창녕군",
-    "risk_score": 11.71,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28056605086:4827000000",
-    "grid_id": 4827000000,
-    "sido": "경상남도",
-    "sigungu": "밀양시",
-    "risk_score": 10.14,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T20:58:42",
-    "batch_id": "actions-28056605086"
-  },
-  {
-    "id": "actions-28060449547:4884000000",
-    "grid_id": 4884000000,
-    "sido": "경상남도",
-    "sigungu": "남해군",
-    "risk_score": 80.22,
-    "risk_level": "DANGER",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4831000000",
-    "grid_id": 4831000000,
-    "sido": "경상남도",
-    "sigungu": "거제시",
-    "risk_score": 74.91,
-    "risk_level": "WARNING",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4812100000",
-    "grid_id": 4812100000,
-    "sido": "경상남도",
-    "sigungu": "창원시 의창구",
-    "risk_score": 66.67,
-    "risk_level": "WARNING",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4833000000",
-    "grid_id": 4833000000,
-    "sido": "경상남도",
-    "sigungu": "양산시",
-    "risk_score": 60.71,
-    "risk_level": "WARNING",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4817000000",
-    "grid_id": 4817000000,
-    "sido": "경상남도",
-    "sigungu": "진주시",
-    "risk_score": 56.42,
-    "risk_level": "CAUTION",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4812300000",
-    "grid_id": 4812300000,
-    "sido": "경상남도",
-    "sigungu": "창원시 성산구",
-    "risk_score": 50.39,
-    "risk_level": "CAUTION",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4872000000",
-    "grid_id": 4872000000,
-    "sido": "경상남도",
-    "sigungu": "의령군",
-    "risk_score": 46.07,
-    "risk_level": "CAUTION",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4824000000",
-    "grid_id": 4824000000,
-    "sido": "경상남도",
-    "sigungu": "사천시",
-    "risk_score": 40.21,
-    "risk_level": "CAUTION",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4822000000",
-    "grid_id": 4822000000,
-    "sido": "경상남도",
-    "sigungu": "통영시",
-    "risk_score": 36.92,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4882000000",
-    "grid_id": 4882000000,
-    "sido": "경상남도",
-    "sigungu": "고성군",
-    "risk_score": 33.66,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4885000000",
-    "grid_id": 4885000000,
-    "sido": "경상남도",
-    "sigungu": "하동군",
-    "risk_score": 33.02,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
-    "id": "actions-28060449547:4812500000",
-    "grid_id": 4812500000,
-    "sido": "경상남도",
-    "sigungu": "창원시 마산합포구",
-    "risk_score": 31.03,
-    "risk_level": "LOW",
-    "calculated_at": "2026-06-23T22:09:08",
-    "batch_id": "actions-28060449547"
-  },
-  {
     "id": "actions-28060449547:4812700000",
     "grid_id": 4812700000,
     "sido": "경상남도",
@@ -9998,5 +9778,225 @@
     "risk_level": "LOW",
     "calculated_at": "2026-06-27T21:34:15",
     "batch_id": "actions-28302446856"
+  },
+  {
+    "id": "actions-28304183144:4884000000",
+    "grid_id": 4884000000,
+    "sido": "경상남도",
+    "sigungu": "남해군",
+    "risk_score": 80.22,
+    "risk_level": "DANGER",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4831000000",
+    "grid_id": 4831000000,
+    "sido": "경상남도",
+    "sigungu": "거제시",
+    "risk_score": 74.91,
+    "risk_level": "WARNING",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4812100000",
+    "grid_id": 4812100000,
+    "sido": "경상남도",
+    "sigungu": "창원시 의창구",
+    "risk_score": 66.67,
+    "risk_level": "WARNING",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4833000000",
+    "grid_id": 4833000000,
+    "sido": "경상남도",
+    "sigungu": "양산시",
+    "risk_score": 60.71,
+    "risk_level": "WARNING",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4817000000",
+    "grid_id": 4817000000,
+    "sido": "경상남도",
+    "sigungu": "진주시",
+    "risk_score": 56.42,
+    "risk_level": "CAUTION",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4812300000",
+    "grid_id": 4812300000,
+    "sido": "경상남도",
+    "sigungu": "창원시 성산구",
+    "risk_score": 50.39,
+    "risk_level": "CAUTION",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4872000000",
+    "grid_id": 4872000000,
+    "sido": "경상남도",
+    "sigungu": "의령군",
+    "risk_score": 46.07,
+    "risk_level": "CAUTION",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4824000000",
+    "grid_id": 4824000000,
+    "sido": "경상남도",
+    "sigungu": "사천시",
+    "risk_score": 40.21,
+    "risk_level": "CAUTION",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4822000000",
+    "grid_id": 4822000000,
+    "sido": "경상남도",
+    "sigungu": "통영시",
+    "risk_score": 36.92,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4882000000",
+    "grid_id": 4882000000,
+    "sido": "경상남도",
+    "sigungu": "고성군",
+    "risk_score": 33.66,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4885000000",
+    "grid_id": 4885000000,
+    "sido": "경상남도",
+    "sigungu": "하동군",
+    "risk_score": 33.02,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4812500000",
+    "grid_id": 4812500000,
+    "sido": "경상남도",
+    "sigungu": "창원시 마산합포구",
+    "risk_score": 31.03,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4812700000",
+    "grid_id": 4812700000,
+    "sido": "경상남도",
+    "sigungu": "창원시 마산회원구",
+    "risk_score": 28.18,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4889000000",
+    "grid_id": 4889000000,
+    "sido": "경상남도",
+    "sigungu": "합천군",
+    "risk_score": 24.94,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4873000000",
+    "grid_id": 4873000000,
+    "sido": "경상남도",
+    "sigungu": "함안군",
+    "risk_score": 22.61,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4886000000",
+    "grid_id": 4886000000,
+    "sido": "경상남도",
+    "sigungu": "산청군",
+    "risk_score": 20.83,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4887000000",
+    "grid_id": 4887000000,
+    "sido": "경상남도",
+    "sigungu": "함양군",
+    "risk_score": 17.93,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4812900000",
+    "grid_id": 4812900000,
+    "sido": "경상남도",
+    "sigungu": "창원시 진해구",
+    "risk_score": 17.29,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4825000000",
+    "grid_id": 4825000000,
+    "sido": "경상남도",
+    "sigungu": "김해시",
+    "risk_score": 15.01,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4888000000",
+    "grid_id": 4888000000,
+    "sido": "경상남도",
+    "sigungu": "거창군",
+    "risk_score": 13.24,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4874000000",
+    "grid_id": 4874000000,
+    "sido": "경상남도",
+    "sigungu": "창녕군",
+    "risk_score": 11.71,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
+  },
+  {
+    "id": "actions-28304183144:4827000000",
+    "grid_id": 4827000000,
+    "sido": "경상남도",
+    "sigungu": "밀양시",
+    "risk_score": 10.14,
+    "risk_level": "LOW",
+    "calculated_at": "2026-06-27T22:48:37",
+    "batch_id": "actions-28304183144"
   }
 ]

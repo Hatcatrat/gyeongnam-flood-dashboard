@@ -2,8 +2,6 @@ name: Refresh dashboard data and Spark evidence
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/30 * * * *"
   push:
     branches:
       - main
@@ -25,13 +23,23 @@ permissions:
 
 jobs:
   refresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          # Full history so the gh-pages push is a fast-forward, not a "fetch first" rejection.
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+
+      # PySpark 3.5.x relies on javax.security.auth.Subject.getSubject, which is
+      # unsupported from JDK 24 on. Pin Java 17 so the Spark job starts reliably.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Install PySpark
         run: python -m pip install pyspark==3.5.3
